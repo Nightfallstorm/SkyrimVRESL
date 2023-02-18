@@ -1,4 +1,4 @@
-namespace stl
+namespace pstl
 {
 	namespace detail
 	{

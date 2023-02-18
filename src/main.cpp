@@ -1,4 +1,4 @@
-
+#include "DataHandlerSE.h"
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
 {
@@ -53,9 +53,10 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	InitializeLog();
 
 	logger::info("loaded plugin");
-
+	
 	SKSE::Init(a_skse);
-
+	DataHandlerSE::InstallDataHandlerHooks();
+	Sleep(10000);
 	logger::info("finish hooks");
 	return true;
 }

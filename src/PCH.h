@@ -18,7 +18,7 @@ namespace logger = SKSE::log;
 
 using namespace std::literals;
 
-namespace stl
+namespace pstl
 {
 	using namespace SKSE::stl;
 
