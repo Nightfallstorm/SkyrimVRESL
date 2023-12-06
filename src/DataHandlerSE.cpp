@@ -72,14 +72,6 @@ struct DataHandlerOffsets
 };
 
 void DataHandlerSE::InstallDataHandlerHooks(){
-	auto& trampoline = SKSE::GetTrampoline();
-	SKSE::AllocTrampoline(14);
-	
-	// ctor
-	trampoline.write_branch<5>(DataHandlerOffsets::ctor.address(), &ctor);
-	logger::info("Hooked {} at offset {:x}", "ctor", DataHandlerOffsets::ctor.offset());
-	
-
 	InstallPatches();
 };
 
