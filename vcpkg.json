@@ -8,6 +8,7 @@
     "boost-stl-interfaces",
     "robin-hood-hashing",
     "rsm-binary-io",
+    "detours",
     "simpleini",
     "spdlog",
     "xbyak"

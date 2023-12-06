@@ -140,6 +140,7 @@ else ()
 endif()
 
 find_package(robin_hood CONFIG REQUIRED)
+find_library(Detours_LIBRARIES NAMES detours.lib)
 find_path(SIMPLEINI_INCLUDE_DIRS "ConvertUTF.c")
 
 # ---- Add source files ----
@@ -198,6 +199,7 @@ target_link_libraries(
 	${PROJECT_NAME}
 	PRIVATE
 		${CommonLibName}::${CommonLibName}
+		${Detours_LIBRARIES}
 		robin_hood::robin_hood
 )
 

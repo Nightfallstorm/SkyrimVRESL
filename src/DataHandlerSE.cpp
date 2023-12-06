@@ -1,4 +1,6 @@
 #include "DataHandlerSE.h"
+#include <detours/detours.h>
+
 
 using namespace RE;
 
@@ -83,9 +85,7 @@ void DataHandlerSE::InstallDataHandlerHooks(){
 
 // Patches various VR functions to work with the SE version of DataHandler
 void DataHandlerSE::InstallPatches() {
-	byte tesregionPatch[] = { 0x48, 0x8B, 0x88, 0xB0, 0x0D, 0x00, 0x00 };  // mov rcx, [rax+DB0h]
-	REL::safe_write(DataHandlerOffsets::tesregion__readfromfilestream.address(), tesregionPatch, 7);
-	logger::info("Patched tesregion at {:x}", DataHandlerOffsets::tesregion__readfromfilestream.offset());
+	
 }
 
 

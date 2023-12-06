@@ -9,6 +9,7 @@
 #include "RE/N/NiTArray.h"
 #include "RE/N/NiTList.h"
 #include "RE/T/TESForm.h"
+#include <detours/detours.h>
 
 using namespace RE;
 
@@ -32,25 +33,32 @@ public:
 	std::uint32_t padD54;                                              // D54
 	TESFile* activeFile;                                               // D58
 	BSSimpleList<TESFile*> files;                                      // D60
+// ~~~~~~~~~~~~~~~~~ below member differs from VR~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	TESFileCollection compiledFileCollection;                          // D70
-	bool masterSave;                                                   // DA0
-	bool blockSave;                                                    // DA1
-	bool saveLoadGame;                                                 // DA2
-	bool autoSaving;                                                   // DA3
-	bool exportingPlugin;                                              // DA4
-	bool clearingData;                                                 // DA5
-	bool hasDesiredFiles;                                              // DA6
-	bool checkingModels;                                               // DA7
-	bool loadingFiles;                                                 // DA8
-	bool dontRemoveIDs;                                                // DA9
-	std::uint8_t unkDAA;                                               // DAA
-	std::uint8_t padDAB;                                               // DAB
-	std::uint32_t padDAC;                                              // DAC
-	TESRegionDataManager* regionDataManager;                           // DB0
-	InventoryChanges* merchantInventory;                               // DB8
+	std::uint64_t fakeVRpadding[0xFA];			// D78
+/*
+* 		std::uint32_t         loadedModCount;     // D70
+		std::uint32_t         pad14;              // D74
+		TESFile*              loadedMods[0xFF];   // D78
+*/
+// ~~~~~~~~~~~~~~~~~ end VR difference ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	bool masterSave;                           // 1570
+	bool blockSave;                            // 1571
+	bool saveLoadGame;                         // 1572
+	bool autoSaving;                           // 1574
+	bool exportingPlugin;                      // 1575
+	bool clearingData;                         // 1576 - init'd to 1
+	bool hasDesiredFiles;                      // 1577
+	bool checkingModels;                       // 1578
+	bool loadingFiles;                         // 1579
+	bool dontRemoveIDs;                        // 157A
+	std::uint8_t pad157B[5];                   // 157B
+	TESRegionDataManager* regionDataManager;   // 1580
+	InventoryChanges* merchantInventory;       // 1588
 
 private:
 	static void InstallPatches();
 };
-static_assert(sizeof(DataHandlerSE) == 0xDC0);
+static_assert(sizeof(DataHandlerSE) == 0x1590);
+static_assert(offsetof(DataHandlerSE, masterSave) == 0x1570);
 
