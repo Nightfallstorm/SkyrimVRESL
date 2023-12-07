@@ -113,45 +113,6 @@ namespace tesfilehooks
 				dq(func);
 			}
 		};
-		static bool HasFile(RE::BSTArray<RE::TESFile*> a_array, RE::TESFile* a_file)
-		{
-			for (auto file : a_array) {
-				if (file == a_file) {
-					return true;
-				}
-			}
-			return false;
-		}
-		// Reinterpret datahandler as our custom datahandler with ESL support
-		// and add the file with the correct compile indexing
-		// This is a replica of what Skyrim SE does when adding files
-		static void AddFile(RE::TESFile* a_file)
-		{
-			logger::info("AddFile called");
-			DataHandlerSE* a_handler = reinterpret_cast<DataHandlerSE*>(RE::TESDataHandler::GetSingleton());
-			auto& fileCollection = a_handler->compiledFileCollection;
-			if (!a_file->IsLight() && HasFile(fileCollection.files, a_file)) {
-				return;
-			} else if (a_file->IsLight() && HasFile(fileCollection.smallFiles, a_file)) {
-				return;
-			}
-
-			if (a_file->IsLight()) {
-				fileCollection.smallFiles.push_back(a_file);
-				auto smallFileCompileIndex = fileCollection.smallFiles.size() - 1;
-				a_file->flags &= 0xFFFFFFu;
-				a_file->flags |= 0xFE << 24;
-				a_file->compileIndex = 0xFE;
-				a_file->smallFileCompileIndex = smallFileCompileIndex;
-			} else {
-				fileCollection.files.push_back(a_file);
-				auto fileCompileIndex = fileCollection.files.size() - 1;
-				a_file->flags &= 0xFFFFFFu;
-				a_file->flags |= fileCompileIndex << 24;
-				a_file->compileIndex = fileCompileIndex;
-				a_file->smallFileCompileIndex = 0;
-			}
-		}
 
 		static void Install()
 		{
@@ -208,7 +169,7 @@ namespace tesfilehooks
 		// Hook where TESDataHandler->loadedMods is used, and replace with the ESL/ESP split
 
 		static void EraseLoadedModCountReset() {
-			REL::safe_fill(target.address() + 0x68, REL::NOP, 0x3);
+			REL::safe_fill(target.address() + 0x6B, REL::NOP, 0x3);
 			logger::info("Erased LoadedModCountReset");
 		}
 
@@ -271,8 +232,8 @@ namespace tesfilehooks
 		static void InstallOpenTESLoop()
 		{
 			std::uintptr_t start = target.address() + 0x21D;
-			std::uintptr_t end = target.address() + 0x266;
-			REL::safe_fill(start, REL::NOP, end - target.address());
+			std::uintptr_t end = target.address() + 0x268;
+			REL::safe_fill(start, REL::NOP, end - start);
 
 			auto trampolineJmp = TrampolineCall2(end, stl::unrestricted_cast<std::uintptr_t>(OpenTESLoopThunk));
 			REL::safe_write(start, trampolineJmp.getCode(), trampolineJmp.getSize());
@@ -298,24 +259,19 @@ namespace tesfilehooks
 			// Replica of what SE does, but for VR
 			auto handler = reinterpret_cast<DataHandlerSE*>(RE::TESDataHandler::GetSingleton());
 			bool firstPlugin = true;
-			logger::info("ConstructObjectListThunk 1");
 			for (auto file : handler->files) {
-				logger::info("ConstructObjectListThunk 2");
 				if (file->compileIndex != 0xFF && file != handler->activeFile) {
-					logger::info("ConstructObjectListThunk 3 {} {:x}", std::string(file->fileName), file->compileIndex);
+					logger::info("ConstructObjectListThunk on file {} {:x}", std::string(file->fileName), file->compileIndex);
 					ConstructObjectList(handler, file, firstPlugin);
-					logger::info("ConstructObjectListThunk 4");
 					firstPlugin = false;
-					logger::info("ConstructObjectListThunk 5");
 				}
 			}
-			logger::info("ConstructObjectListThunk 6");
 			if (handler->activeFile) {
-				logger::info("ConstructObjectListThunk 7");
+				logger::info("ConstructObjectListThunk on active file {} {:x}", 
+					std::string(handler->activeFile->fileName),
+					handler->activeFile->compileIndex);
 				ConstructObjectList(handler, handler->activeFile, firstPlugin);
-				logger::info("ConstructObjectListThunk 8");
 				firstPlugin = false;
-				logger::info("ConstructObjectListThunk 9");
 			}
 			logger::info("ConstructObjectListThunk finished!");
 		}
@@ -323,7 +279,7 @@ namespace tesfilehooks
 		static void InstallConstructObjectListLoop() {
 			std::uintptr_t start = target.address() + 0x29C;
 			std::uintptr_t end = target.address() + 0x2D2;
-			REL::safe_fill(start, REL::NOP, end - target.address());
+			REL::safe_fill(start, REL::NOP, end - start);
 
 			auto trampolineJmp = TrampolineCall2(end, stl::unrestricted_cast<std::uintptr_t>(ConstructObjectListThunk));
 			REL::safe_write(start, trampolineJmp.getCode(), trampolineJmp.getSize());
