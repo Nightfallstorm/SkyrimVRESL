@@ -333,11 +333,62 @@ namespace tesfilehooks
 		}
 	};
 
+	struct LoadedModCountHook {
+		// TODO: Temp workaround. We MUST properly fixup uses of this function
+		static std::uint32_t thunk(DataHandlerSE* a_handler) {
+			return a_handler->compiledFileCollection.files.size();
+		}
+
+		static void Install() {
+			REL::Relocation<std::uintptr_t> target{ REL::Offset(0x17EFE0) };
+			auto& trampoline = SKSE::GetTrampoline();
+			SKSE::AllocTrampoline(14);
+			trampoline.write_branch<5>(target.address(), thunk);
+		}
+	};
+
+	struct GetModAtIndexHook
+	{
+		// TODO: Temp workaround. We MUST properly fixup uses of this function
+		static RE::TESFile* thunk(DataHandlerSE* a_handler, std::uint32_t a_index)
+		{
+			return a_handler->compiledFileCollection.files[a_index];
+		}
+
+		static void Install()
+		{
+			REL::Relocation<std::uintptr_t> target{ REL::Offset(0x182D40) };
+			auto& trampoline = SKSE::GetTrampoline();
+			SKSE::AllocTrampoline(14);
+			trampoline.write_branch<5>(target.address(), thunk);
+		}
+	};
+
+	struct IsGameModdedHook
+	{
+		// TODO: Temp workaround. We should consider engine fixes and what to do here
+		static bool thunk(DataHandlerSE* a_handler, std::uint32_t a_index)
+		{
+			return true;
+		}
+
+		static void Install()
+		{
+			REL::Relocation<std::uintptr_t> target{ REL::Offset(0x17FB90) };
+			auto& trampoline = SKSE::GetTrampoline();
+			SKSE::AllocTrampoline(14);
+			trampoline.write_branch<5>(target.address(), thunk);
+		}
+	};
+
 	static inline void InstallHooks()
 	{
 		DuplicateHook::Install();
 		AddTESFileHook::Install();
 		AddTESFileHook1::Install();
 		CompileFilesHook::Install();
+		LoadedModCountHook::Install();
+		GetModAtIndexHook::Install();
+		IsGameModdedHook::Install();
 	}
 }

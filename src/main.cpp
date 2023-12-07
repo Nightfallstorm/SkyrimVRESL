@@ -2,6 +2,26 @@
 #include "hooks.h"
 #include "tesfilehooks.h"
 
+void MessageHandler(SKSE::MessagingInterface::Message* a_message)
+{
+	switch (a_message->type) {
+	case SKSE::MessagingInterface::kDataLoaded:
+		{
+			logger::info("kDataLoaded: Printing files");
+			auto handler = reinterpret_cast<DataHandlerSE*>(RE::TESDataHandler::GetSingleton());
+			for (auto file : handler->compiledFileCollection.files) {
+				logger::info("Regular file {}: Index {:x} IsMaster {}}", file->GetFilename(), file->compileIndex, file->recordFlags.all(RE::TESFile::RecordFlag::kMaster));
+			}
+
+			for (auto file : handler->compiledFileCollection.smallFiles) {
+				logger::info("Small file {}: Index {:x} IsMaster {}}", file->GetFilename(), file->compileIndex, file->recordFlags.all(RE::TESFile::RecordFlag::kMaster));
+			}
+		}
+	default:
+		break;
+	}
+}
+
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
 {
 	a_info->infoVersion = SKSE::PluginInfo::kVersion;
@@ -53,6 +73,9 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	logger::info("loaded plugin");
 	
 	SKSE::Init(a_skse);
+	auto messaging = SKSE::GetMessagingInterface();
+	messaging->RegisterListener(MessageHandler);
+
 	DataHandlerSE::InstallDataHandlerHooks();
 	tesfilehooks::InstallHooks();
 	logger::info("finish hooks");
