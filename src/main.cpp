@@ -1,5 +1,6 @@
 #include "DataHandlerSE.h"
 #include "hooks.h"
+#include "tesfilehooks.h"
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
 {
@@ -53,7 +54,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	
 	SKSE::Init(a_skse);
 	DataHandlerSE::InstallDataHandlerHooks();
-	hooks::tesfilehooks::InstallHooks();
+	tesfilehooks::InstallHooks();
 	logger::info("finish hooks");
 	return true;
 }
