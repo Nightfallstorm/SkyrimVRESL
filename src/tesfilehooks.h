@@ -128,7 +128,7 @@ namespace tesfilehooks
 		}
 	};
 
-	struct LoadFilesHook {
+	struct CompileFilesHook {
 		static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x17EFF0) };
 
 		static inline REL::Relocation<int> iTotalForms{ REL::Offset(0x1F889B4) };
@@ -338,6 +338,6 @@ namespace tesfilehooks
 		DuplicateHook::Install();
 		AddTESFileHook::Install();
 		AddTESFileHook1::Install();
-		LoadFilesHook::Install();
+		CompileFilesHook::Install();
 	}
 }
