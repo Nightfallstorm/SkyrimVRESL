@@ -369,7 +369,7 @@ namespace tesfilehooks
 		// TODO: Temp workaround. We should consider engine fixes and what to do here
 		static bool thunk(DataHandlerSE* a_handler, std::uint32_t a_index)
 		{
-			return true;
+			return false;
 		}
 
 		static void Install()
