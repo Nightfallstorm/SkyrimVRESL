@@ -1,5 +1,5 @@
 set(sources ${sources}
-	src/DataHandlerSE.cpp
+	src/DataHandler.cpp
 	src/main.cpp
 	src/PCH.cpp
 )

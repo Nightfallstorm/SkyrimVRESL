@@ -1,5 +1,7 @@
-#include "DataHandlerSE.h"
+#include "DataHandler.h"
 #include "hooks.h"
+#include "saveloadhooks.h"
+#include "startuphooks.h"
 #include "tesfilehooks.h"
 
 void MessageHandler(SKSE::MessagingInterface::Message* a_message)
@@ -8,7 +10,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 	case SKSE::MessagingInterface::kDataLoaded:
 		{
 			logger::info("kDataLoaded: Printing files");
-			auto handler = reinterpret_cast<DataHandlerSE*>(RE::TESDataHandler::GetSingleton());
+			auto handler = DataHandler::GetSingleton();
 			for (auto file : handler->compiledFileCollection.files) {
 				logger::info("Regular file {}", std::string(file->fileName));
 			}
@@ -35,8 +37,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a
 
 	const auto ver = a_skse->RuntimeVersion();
 	if (ver <
-		SKSE::RUNTIME_VR_1_4_15
-	) {
+		SKSE::RUNTIME_VR_1_4_15) {
 		logger::critical(FMT_STRING("Unsupported runtime version {}"), ver.string());
 		return false;
 	}
@@ -57,8 +58,13 @@ void InitializeLog()
 
 	auto log = std::make_shared<spdlog::logger>("global log"s, std::move(sink));
 
+#ifdef _DEBUG
+	log->set_level(spdlog::level::debug);
+	log->flush_on(spdlog::level::debug);
+#else
 	log->set_level(spdlog::level::info);
 	log->flush_on(spdlog::level::info);
+#endif
 
 	spdlog::set_default_logger(std::move(log));
 	spdlog::set_pattern("[%H:%M:%S:%e] %v"s);
@@ -71,13 +77,13 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	InitializeLog();
 
 	logger::info("loaded plugin");
-	
+
 	SKSE::Init(a_skse);
 	auto messaging = SKSE::GetMessagingInterface();
 	messaging->RegisterListener(MessageHandler);
 
-	DataHandlerSE::InstallDataHandlerHooks();
 	tesfilehooks::InstallHooks();
+	startuphooks::InstallHooks();
 	logger::info("finish hooks");
 	return true;
 }
