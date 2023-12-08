@@ -10,11 +10,11 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 			logger::info("kDataLoaded: Printing files");
 			auto handler = reinterpret_cast<DataHandlerSE*>(RE::TESDataHandler::GetSingleton());
 			for (auto file : handler->compiledFileCollection.files) {
-				logger::info("Regular file {}: Index {:x} IsMaster {}}", file->GetFilename(), file->compileIndex, file->recordFlags.all(RE::TESFile::RecordFlag::kMaster));
+				logger::info("Regular file {}", std::string(file->fileName));
 			}
 
 			for (auto file : handler->compiledFileCollection.smallFiles) {
-				logger::info("Small file {}: Index {:x} IsMaster {}}", file->GetFilename(), file->compileIndex, file->recordFlags.all(RE::TESFile::RecordFlag::kMaster));
+				logger::info("Small file {}", std::string(file->fileName));
 			}
 		}
 	default:

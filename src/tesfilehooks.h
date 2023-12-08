@@ -1,6 +1,219 @@
 #pragma once
-#include <detours/detours.h>
 #include "DataHandlerSE.h"
+#include <detours/detours.h>
+
+namespace loadedmodhooks
+{
+	static inline RE::BSTArray<RE::TESFile*> filesArray = RE::BSTArray<RE::TESFile*>();
+
+	// SE loops through handler->files and then handler->activeFile last
+	// We use an array to mimic this for VR
+	static void PopulateFilesArray()
+	{
+		auto handler = reinterpret_cast<DataHandlerSE*>(RE::TESDataHandler::GetSingleton());
+		if (filesArray.empty() ||
+			filesArray.size() != handler->compiledFileCollection.files.size() + handler->compiledFileCollection.smallFiles.size()) {
+			// Ensure filesArray is synchronized with handler
+			filesArray.clear();
+			for (auto file : handler->files) {
+				if (file->compileIndex != 0xFF && file != handler->activeFile) {
+					filesArray.push_back(file);
+				}
+			}
+
+			if (handler->activeFile) {
+				filesArray.push_back(handler->activeFile);
+			}
+		}
+	}
+
+	static std::uint32_t GetLoadedModCountSE(DataHandlerSE* a_handler)
+	{
+		logger::info("GetLoadedModCountSE called!");
+		PopulateFilesArray();
+		return filesArray.size();
+	}
+
+	static RE::TESFile* GetModAtIndex(DataHandlerSE* a_handler, std::uint32_t a_index)
+	{
+		logger::info("GetModAtIndex called for {:x}!", a_index);
+		return filesArray[a_index];
+	}
+
+	struct TESQuestHook {
+		static void Install() {
+			REL::Relocation<std::uintptr_t> target{ REL::Offset(0x389CA0) };
+			SKSE::AllocTrampoline(14);
+			SKSE::GetTrampoline().write_call<5>(target.address() + 0x181, GetLoadedModCountSE);
+			SKSE::AllocTrampoline(14);
+			SKSE::GetTrampoline().write_call<5>(target.address() + 0x199, GetModAtIndex);
+
+			logger::info("Installed TESQuest LoadedModCheck hook");
+		}
+	};
+
+	struct UnkTESTopicHook
+	{
+		static void Install()
+		{
+			REL::Relocation<std::uintptr_t> target{ REL::Offset(0x389ED0) };
+			SKSE::AllocTrampoline(14);
+			SKSE::GetTrampoline().write_call<5>(target.address() + 0x147, GetLoadedModCountSE);
+			SKSE::AllocTrampoline(14);
+			SKSE::GetTrampoline().write_call<5>(target.address() + 0x169, GetModAtIndex);
+
+			logger::info("Installed UnkTESTopicHook hook");
+		}
+	};
+
+	struct Savemodshook {
+
+		static RE::BGSSaveGameBuffer* BGSSaveGameBufferCTOR(RE::BGSSaveGameBuffer* a_buffer)
+		{
+			using func_t = decltype(&BGSSaveGameBufferCTOR);
+			REL::Relocation<func_t> func{ REL::Offset(0x5A0E70) };
+			return func(a_buffer);
+		}
+
+		static void BGSSaveGameBuffer_SaveFileName(RE::BGSSaveGameBuffer* a_buffer, char* a_fileName)
+		{
+			using func_t = decltype(&BGSSaveGameBuffer_SaveFileName);
+			REL::Relocation<func_t> func{ REL::Offset(0x5A1100) };
+			return func(a_buffer, a_fileName);
+		}
+
+		static void saveUnk(RE::BGSSaveGameBuffer* a_buffer, Win32FileType* a_unk) {
+			using func_t = decltype(&saveUnk);
+			REL::Relocation<func_t> func{ REL::Offset(0x5A0F00) };
+			return func(a_buffer, a_unk);
+		}
+
+		static void BGSSaveGameBufferDTOR(RE::BGSSaveGameBuffer* a_buffer)
+		{
+			using func_t = decltype(&BGSSaveGameBufferDTOR);
+			REL::Relocation<func_t> func{ REL::Offset(0x5A0E90) };
+			return func(a_buffer);
+		}
+
+		static void SaveModNames(std::uint64_t a_unk, Win32FileType* a_unk2) {
+			logger::info("SaveModNames called");
+			RE::BGSSaveGameBuffer* buffer = RE::malloc<RE::BGSSaveGameBuffer>();
+			BGSSaveGameBufferCTOR(buffer);
+			auto handler = reinterpret_cast<DataHandlerSE*>(RE::TESDataHandler::GetSingleton());
+			auto fileSize = handler->compiledFileCollection.files.size();
+			auto smallFileSize = handler->compiledFileCollection.smallFiles.size();
+			buffer->SaveDataEndian(&fileSize, 1u);
+			for (auto file : handler->compiledFileCollection.files) {
+				BGSSaveGameBuffer_SaveFileName(buffer, file->fileName);
+			}
+			buffer->SaveDataEndian(&smallFileSize, 2u);
+			for (auto file : handler->compiledFileCollection.smallFiles) {
+				BGSSaveGameBuffer_SaveFileName(buffer, file->fileName);
+			}
+			saveUnk(buffer, a_unk2);
+			BGSSaveGameBufferDTOR(buffer);
+			logger::info("SaveModNames finished");
+		}
+
+		static void Install() {
+			REL::Relocation<std::uintptr_t> target{ REL::Offset(0x585580) };
+			SKSE::AllocTrampoline(14);
+			SKSE::GetTrampoline().write_branch<5>(target.address(), SaveModNames);
+		}
+	};
+
+	struct LoadModsHook
+	{
+		static RE::BGSLoadGameBuffer* BGSLoadGameBufferCTOR(RE::BGSLoadGameBuffer* a_buffer)
+		{
+			using func_t = decltype(&BGSLoadGameBufferCTOR);
+			REL::Relocation<func_t> func{ REL::Offset(0x59EF30) };
+			return func(a_buffer);
+		}
+
+		static void BGSLoadGameBufferFile(RE::BGSLoadGameBuffer* a_buffer, Win32FileType* a_unk) 
+		{
+			using func_t = decltype(&BGSLoadGameBufferFile);
+			REL::Relocation<func_t> func{ REL::Offset(0x5978F0) };
+			return func(a_buffer, a_unk);
+		}
+
+		static void BGSLoadGameBufferReadString(RE::BGSLoadGameBuffer* a_buffer, char a_string[])
+		{
+			using func_t = decltype(&BGSLoadGameBufferReadString);
+			REL::Relocation<func_t> func{ REL::Offset(0x597B20) };
+			return func(a_buffer, a_string);
+		}
+
+		static void BGSSaveGameBufferDTOR(RE::BGSLoadGameBuffer* a_buffer)
+		{
+			using func_t = decltype(&BGSSaveGameBufferDTOR);
+			REL::Relocation<func_t> func{ REL::Offset(0x5978A0) };
+			return func(a_buffer);
+		}
+
+		// TODO: We need to hook BGSSaveLoadGame and let it know about ESLs as a concept, just like SE
+		// TODO: We skip the verification step for the sake of simplicity. We should add that verification and do it SE-style
+		static bool LoadMods(RE::BGSSaveLoadGame* a_saveloadManager, Win32FileType* a_unk2, std::uint64_t a_unk3) {
+			// Simple version, read in the same amount of data from savemodshook and only save the regular files
+			// THIS IS A WORKAROUND, NOT THE ACTUAL FIX
+			RE::BGSLoadGameBuffer* buffer = RE::malloc<RE::BGSLoadGameBuffer>();
+			BGSLoadGameBufferCTOR(buffer);
+			BGSLoadGameBufferFile(buffer, a_unk2);
+			std::memset(a_saveloadManager->pluginList, 0xFF, 0xFF);
+			std::memset(a_saveloadManager->unk18, 0xFF, 0xFF);
+			std::uint32_t regularFileCount = 0;
+			std::uint32_t smallFileCount = 0;
+			buffer->LoadDataEndian(&regularFileCount, 1u, 0); // TODO: Offset doesn't exist, we should remove it
+			char fileName[328]{ 0 };
+			for (std::uint32_t i = 0; i < regularFileCount; i++) {
+				BGSLoadGameBufferReadString(buffer, fileName);
+				auto file = RE::TESDataHandler::GetSingleton()->LookupModByName(fileName);
+				if (file && file->compileIndex != 0xFF) {
+					a_saveloadManager->pluginList[i] = i;  // TODO: this should be BSTArray like in SE
+					a_saveloadManager->unk18[i] = i; // TODO: also BSTArray like in SE
+				}
+			}
+
+			// TODO: SE does a version check on save before loading ESLs, we should do the same for mid-save compatibily
+			buffer->LoadDataEndian(&regularFileCount, 2u, 0);  // TODO: Offset doesn't exist, we should remove it
+			for (std::uint32_t i = 0; i < smallFileCount; i++) {
+				BGSLoadGameBufferReadString(buffer, fileName);
+				// TODO: Grab and store the ESLs like SE does
+			}
+			delete buffer;
+			return true; // TODO: True means save file matches load order, fix when we add verification checks
+		}
+
+		static void Install() {
+			REL::Relocation<std::uintptr_t> target{ REL::Offset(0x585640) };
+			SKSE::AllocTrampoline(14);
+			SKSE::GetTrampoline().write_branch<5>(target.address(), LoadMods);
+		}
+	};
+
+	struct UnkTerrainHook {
+		static std::uint32_t thunk() {
+			// SE only uses the regular files size. This function is unknown, but we will do the same here to be safe
+			return reinterpret_cast<DataHandlerSE*>(RE::TESDataHandler::GetSingleton())->compiledFileCollection.files.size();
+		}
+
+		static void Install() {
+			REL::Relocation<std::uintptr_t> target{ REL::Offset(0x4B80A0 + 0x159) };
+			SKSE::AllocTrampoline(14);
+			SKSE::GetTrampoline().write_branch<5>(target.address(), thunk);
+		}
+	};
+
+	static inline void InstallHooks()
+	{
+		TESQuestHook::Install();
+		UnkTESTopicHook::Install();
+		Savemodshook::Install();
+		LoadModsHook::Install();
+		UnkTerrainHook::Install();
+	}
+}
 
 namespace tesfilehooks
 {
@@ -48,8 +261,9 @@ namespace tesfilehooks
 
 	struct AddTESFileHook
 	{
-		static void AddFileThunk(DataHandlerSE* a_handler, RE::TESFile* a_file) {
-			return AddFile(a_file);			
+		static void AddFileThunk(DataHandlerSE* a_handler, RE::TESFile* a_file)
+		{
+			return AddFile(a_file);
 		}
 
 		static void Install()
@@ -128,7 +342,8 @@ namespace tesfilehooks
 		}
 	};
 
-	struct CompileFilesHook {
+	struct CompileFilesHook
+	{
 		static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x17EFF0) };
 
 		static inline REL::Relocation<int> iTotalForms{ REL::Offset(0x1F889B4) };
@@ -168,12 +383,14 @@ namespace tesfilehooks
 
 		// Hook where TESDataHandler->loadedMods is used, and replace with the ESL/ESP split
 
-		static void EraseLoadedModCountReset() {
+		static void EraseLoadedModCountReset()
+		{
 			REL::safe_fill(target.address() + 0x6B, REL::NOP, 0x3);
 			logger::info("Erased LoadedModCountReset");
 		}
 
-		static void InstallAddFile() {
+		static void InstallAddFile()
+		{
 			std::uintptr_t start = target.address() + 0x196;
 			std::uintptr_t end = target.address() + 0x1B9;
 			REL::safe_fill(start, REL::NOP, end - start);
@@ -186,7 +403,7 @@ namespace tesfilehooks
 			auto& trampoline2 = SKSE::GetTrampoline();
 			SKSE::AllocTrampoline(14);
 			trampoline2.write_branch<5>(start, (std::uintptr_t)result);
-			
+
 			//REL::safe_write(start, trampolineJmp.getCode(), trampolineJmp.getSize());
 			//if (trampolineJmp.getSize() > end - start) {
 			//	logger::critical("InstallAddFile trampoline too big by {} bytes!", trampolineJmp.getSize() - (end - start));
@@ -211,7 +428,8 @@ namespace tesfilehooks
 			logger::info("Install LoadFilesHook2 hook at address {:x}", start);
 		}
 
-		static void OpenTESLoopThunk() {
+		static void OpenTESLoopThunk()
+		{
 			logger::info("OpenTESLoop invoked!");
 			// Replica of what SE does, but for VR
 			auto handler = reinterpret_cast<DataHandlerSE*>(RE::TESDataHandler::GetSingleton());
@@ -238,7 +456,6 @@ namespace tesfilehooks
 			auto trampolineJmp = TrampolineCall2(end, stl::unrestricted_cast<std::uintptr_t>(OpenTESLoopThunk));
 			REL::safe_write(start, trampolineJmp.getCode(), trampolineJmp.getSize());
 
-			
 			if (trampolineJmp.getSize() > end - start) {
 				logger::critical("InstallOpenTESLoop trampoline too big by {} bytes!", trampolineJmp.getSize() - (end - start));
 			}
@@ -267,7 +484,7 @@ namespace tesfilehooks
 				}
 			}
 			if (handler->activeFile) {
-				logger::info("ConstructObjectListThunk on active file {} {:x}", 
+				logger::info("ConstructObjectListThunk on active file {} {:x}",
 					std::string(handler->activeFile->fileName),
 					handler->activeFile->compileIndex);
 				ConstructObjectList(handler, handler->activeFile, firstPlugin);
@@ -276,7 +493,8 @@ namespace tesfilehooks
 			logger::info("ConstructObjectListThunk finished!");
 		}
 
-		static void InstallConstructObjectListLoop() {
+		static void InstallConstructObjectListLoop()
+		{
 			std::uintptr_t start = target.address() + 0x29C;
 			std::uintptr_t end = target.address() + 0x2D2;
 			REL::safe_fill(start, REL::NOP, end - start);
@@ -291,8 +509,9 @@ namespace tesfilehooks
 			logger::info("Install LoadFilesHook4 hook at address {:x}", start);
 		}
 
-		static void Install() {
-			EraseLoadedModCountReset();		
+		static void Install()
+		{
+			EraseLoadedModCountReset();
 			InstallAddFile();
 			InstallAddFile2();
 			InstallOpenTESLoop();
@@ -307,7 +526,7 @@ namespace tesfilehooks
 
 		static RE::TESFile* thunk(RE::TESFile* a_self, std::uint32_t a_cacheSize)
 		{
-			RE::TESFile* duplicateFile = originalFunction(a_self, a_cacheSize); 
+			RE::TESFile* duplicateFile = originalFunction(a_self, a_cacheSize);
 			duplicateFile->smallFileCompileIndex = a_self->smallFileCompileIndex;
 			return duplicateFile;
 		}
@@ -333,13 +552,17 @@ namespace tesfilehooks
 		}
 	};
 
-	struct LoadedModCountHook {
+	struct LoadedModCountHook
+	{
 		// TODO: Temp workaround. We MUST properly fixup uses of this function
-		static std::uint32_t thunk(DataHandlerSE* a_handler) {
+		static std::uint32_t thunk(DataHandlerSE* a_handler)
+		{
+			RE::DebugMessageBox("LoadedModCountHook invoked!!! not intended!");
 			return a_handler->compiledFileCollection.files.size();
 		}
 
-		static void Install() {
+		static void Install()
+		{
 			REL::Relocation<std::uintptr_t> target{ REL::Offset(0x17EFE0) };
 			auto& trampoline = SKSE::GetTrampoline();
 			SKSE::AllocTrampoline(14);
@@ -366,7 +589,8 @@ namespace tesfilehooks
 
 	struct IsGameModdedHook
 	{
-		// TODO: Temp workaround. We should consider engine fixes and what to do here
+		// Replica of Engine fixes. Return game isn't modded to enable achievements
+		// For us, this removes one use of `loadedMods` that would cause problems otherwise
 		static bool thunk(DataHandlerSE* a_handler, std::uint32_t a_index)
 		{
 			return false;
@@ -387,8 +611,9 @@ namespace tesfilehooks
 		AddTESFileHook::Install();
 		AddTESFileHook1::Install();
 		CompileFilesHook::Install();
-		LoadedModCountHook::Install();
-		GetModAtIndexHook::Install();
+		LoadedModCountHook::Install(); // TODO: Remove this once we fully hook uses of this
+		GetModAtIndexHook::Install();// TODO: Remove this once we fully hook uses of this
 		IsGameModdedHook::Install();
+		loadedmodhooks::InstallHooks();
 	}
 }
