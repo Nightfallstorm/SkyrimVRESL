@@ -260,6 +260,63 @@ namespace tesfilehooks
 		}
 	};
 
+	struct UnkHook {
+		// TODO: Find name of this UnkHook
+		static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x1B9E60) };
+		static inline REL::Relocation<std::uintptr_t> target2{ REL::Offset(0x1B9C50) };
+		
+		static std::uint64_t thunk(RE::FormID a_formID) {
+			auto highestByte = a_formID >> 0x18;
+			logger::info("Calling Unk with {:x}", highestByte);
+			return func(highestByte);
+		}
+
+		static inline REL::Relocation<decltype(thunk)> func;
+
+		static RE::TESFile* GetFileFromFormID(DataHandler* a_handler, RE::FormID a_formID) {
+			logger::info("GetFileFromFormID called on {:x}", a_formID);
+			auto espIndex = a_formID >> 0x18;
+			if (espIndex == 0xFE) {
+				auto eslIndex = (a_formID >> 0x12) & 0xFFF;
+				if (eslIndex < a_handler->compiledFileCollection.smallFiles.size()) {
+					return a_handler->compiledFileCollection.smallFiles[eslIndex];
+				}
+			} else if (espIndex < a_handler->compiledFileCollection.files.size()) {
+				return a_handler->compiledFileCollection.files[espIndex];
+			}
+			return nullptr;
+		}
+
+		static void EraseBitShift()
+		{
+			std::uintptr_t start = target.address() + 0x52;
+			std::uintptr_t end = target.address() + 0x55;
+			REL::safe_fill(start, REL::NOP, end - start);
+
+			start = target2.address() + 0x47;
+			end = target2.address() + 0x4A;
+			REL::safe_fill(start, REL::NOP, end - start);
+		}
+
+		static void InstallThunkUnk() {
+			pstl::write_thunk_call<UnkHook>(target.address() + 0x5B);
+			pstl::write_thunk_call<UnkHook>(target2.address() + 0x50);
+		}
+		
+		static void InstallGetFileFromFormID() {
+			SKSE::AllocTrampoline(14);
+			SKSE::GetTrampoline().write_call<5>(target.address() + 0x71, GetFileFromFormID);
+			SKSE::AllocTrampoline(14);
+			SKSE::GetTrampoline().write_call<5>(target2.address() + 0x66, GetFileFromFormID);
+		}
+
+		static void Install() {
+			EraseBitShift();
+			InstallThunkUnk();
+			InstallGetFileFromFormID();			
+		}
+	};
+
 	struct DuplicateHook
 	{
 		// Copy over the smallCompileIndex, which is padding in VR normally
@@ -313,10 +370,11 @@ namespace tesfilehooks
 
 	struct GetModAtIndexHook
 	{
-		// TODO: Temp workaround. We MUST properly fixup uses of this function
 		static RE::TESFile* thunk(DataHandler* a_handler, std::uint32_t a_index)
 		{
-			return a_handler->compiledFileCollection.files[a_index];
+			// This hook should never be invoked, this means a usage of this function was not patched!
+			// Throw to prevent bad behavior and force a patch
+			throw std::invalid_argument("Unexpected use of DataHandler::GetModAtIndex!");
 		}
 
 		static void Install()
@@ -350,12 +408,13 @@ namespace tesfilehooks
 	{
 		DuplicateHook::Install();
 		LoadedModCountHook::Install();
-		GetModAtIndexHook::Install();   // TODO: Remove this once we fully hook uses of this
+		GetModAtIndexHook::Install();
 		IsGameModdedHook::Install();
 		TESQuestHook::Install();
 		UnkTESTopicHook::Install();
 		UnkTerrainHook::Install();
 		UnkCOCHook::Install();
 		UnkCOCFileResetHook::Install();
+		UnkHook::Install();
 	}
 }
