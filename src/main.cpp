@@ -12,12 +12,14 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 			logger::info("kDataLoaded: Printing files");
 			auto handler = DataHandler::GetSingleton();
 			for (auto file : handler->compiledFileCollection.files) {
-				logger::info("Regular file {}", std::string(file->fileName));
+				logger::info("Regular file {} recordFlags: {:x}", std::string(file->fileName), file->recordFlags.underlying());
 			}
 
 			for (auto file : handler->compiledFileCollection.smallFiles) {
-				logger::info("Small file {}", std::string(file->fileName));
+				logger::info("Small file {} recordFlags: {:x}", std::string(file->fileName), file->recordFlags.underlying());
 			}
+
+			// TODO: Runtime hooks here?
 		}
 	default:
 		break;
@@ -84,6 +86,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 
 	tesfilehooks::InstallHooks();
 	startuphooks::InstallHooks();
+	saveloadhooks::InstallHooks();
 	logger::info("finish hooks");
 	return true;
 }

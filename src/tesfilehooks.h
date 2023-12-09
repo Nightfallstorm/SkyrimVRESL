@@ -2,7 +2,7 @@
 #include "DataHandler.h"
 #include <detours/detours.h>
 
-namespace loadedmodhooks
+namespace tesfilehooks
 {
 	static inline RE::BSTArray<RE::TESFile*> filesArray = RE::BSTArray<RE::TESFile*>();
 
@@ -84,16 +84,6 @@ namespace loadedmodhooks
 		}
 	};
 
-	static inline void InstallHooks()
-	{
-		TESQuestHook::Install();
-		UnkTESTopicHook::Install();
-		UnkTerrainHook::Install();
-	}
-}
-
-namespace tesfilehooks
-{
 	struct DuplicateHook
 	{
 		// Copy over the smallCompileIndex, which is padding in VR normally
@@ -186,6 +176,8 @@ namespace tesfilehooks
 		LoadedModCountHook::Install();  // TODO: Remove this once we fully hook uses of this
 		GetModAtIndexHook::Install();   // TODO: Remove this once we fully hook uses of this
 		IsGameModdedHook::Install();
-		loadedmodhooks::InstallHooks();
+		//TESQuestHook::Install();
+		//UnkTESTopicHook::Install();
+		//UnkTerrainHook::Install();
 	}
 }
