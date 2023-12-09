@@ -87,6 +87,177 @@ namespace tesfilehooks
 		}
 	};
 
+	struct UnkCOCHook {
+		static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x17C000) };
+		
+		struct TrampolineCOCCall : Xbyak::CodeGenerator
+		{
+			// Call OpenFileLoop method, and check if file successfully opened
+			TrampolineCOCCall(std::uintptr_t jmpOnSuccess, std::uintptr_t jmpOnFail, std::uintptr_t func)
+			{
+				Xbyak::Label funcLabel;
+				Xbyak::Label succLabel;
+				Xbyak::Label failLabel;
+				mov(ecx, edi);
+				sub(rsp, 0x20);
+				call(ptr[rip + funcLabel]);
+				add(rsp, 0x20);
+				mov(rbx, rax);
+				test(rbx, rbx);
+				jz(failLabel);
+				L(succLabel);
+				mov(rcx, jmpOnSuccess);
+				jmp(rcx);
+				L(failLabel);
+				mov(rcx, jmpOnFail);
+				jmp(rcx);
+				L(funcLabel);
+				dq(func);
+			}
+		};
+
+		struct TrampolineFailCOCCall : Xbyak::CodeGenerator
+		{
+			// Loop to OpenFileLoop if more files left to open
+			TrampolineFailCOCCall(std::uintptr_t jmpOnSuccess, std::uintptr_t jmpOnFail, std::uintptr_t func)
+			{
+				Xbyak::Label funcLabel;
+				Xbyak::Label succLabel;
+				Xbyak::Label failLabel;
+				inc(edi);
+				mov(ecx, edi);
+				sub(rsp, 0x20);
+				call(ptr[rip + funcLabel]);
+				add(rsp, 0x20);
+				test(rax, rax);
+				jz(failLabel);
+				L(succLabel);
+				mov(rcx, jmpOnSuccess);
+				jmp(rcx);
+				L(failLabel);
+				mov(rcx, jmpOnFail);
+				jmp(rcx);
+				L(funcLabel);
+				dq(func);
+			}
+		};
+
+		static bool IndexCheck(std::uint32_t a_index) {
+			return a_index >= filesArray.size();
+		}
+
+		static RE::TESFile* OpenFileLoop(std::uint32_t a_index) {
+			// VR loops through and opens loadedMods until one returns true
+			// SE loops through `files` then `activeFile` and opens until one returns true
+			logger::debug("OpenFileLoop called with index {}", a_index);
+			PopulateFilesArray();
+			if (filesArray[a_index]->OpenTES(RE::NiFile::OpenMode::kReadOnly, false)) {
+				return filesArray[a_index];
+			}
+			return nullptr;
+		}
+
+		static void SkipLoadedModsOptimizedLoopCheck() {
+			// The loop only does logic on `loadedMods` if a single file is "optimized"
+			// It doesn't seem like any plugins in vanilla or modded would have this flag, so we will
+			// NOP all the logic
+
+			// TODO: We should properly handle "optmized" TESFile cases
+			std::uintptr_t start = target.address() + 0x9E;
+			std::uintptr_t end = target.address() + 0x16D;
+			REL::safe_fill(start, REL::NOP, end - start);
+		}
+
+		static void InstallFileOpenLoop() {
+			std::uintptr_t start = target.address() + 0x173;
+			std::uintptr_t end = target.address() + 0x1A8;
+			std::uintptr_t failJmp = target.address() + 0x439;
+			REL::safe_fill(start, REL::NOP, end - start);
+
+			auto trampolineJmp = TrampolineCOCCall(end, failJmp, stl::unrestricted_cast<std::uintptr_t>(OpenFileLoop));
+			auto& trampoline = SKSE::GetTrampoline();
+			SKSE::AllocTrampoline(trampolineJmp.getSize());
+			auto result = trampoline.allocate(trampolineJmp);
+			SKSE::AllocTrampoline(14);
+			trampoline.write_branch<5>(start, (std::uintptr_t)result);
+		}
+
+		static void InstallFailOpenFileLoop() {
+			std::uintptr_t start = target.address() + 0x439;
+			std::uintptr_t end = target.address() + 0x44C;
+			std::uintptr_t failJmp = target.address() + 0x44C;
+			std::uintptr_t succJmp = target.address() + 0x173;
+			REL::safe_fill(start, REL::NOP, end - start);
+
+			auto trampolineJmp = TrampolineFailCOCCall(succJmp, failJmp, stl::unrestricted_cast<std::uintptr_t>(IndexCheck));
+			auto& trampoline = SKSE::GetTrampoline();
+			SKSE::AllocTrampoline(trampolineJmp.getSize());
+			auto result = trampoline.allocate(trampolineJmp);
+			SKSE::AllocTrampoline(14);
+			trampoline.write_branch<5>(start, (std::uintptr_t) result);
+		}
+
+		static void Install() {
+			SkipLoadedModsOptimizedLoopCheck();
+			InstallFileOpenLoop();
+			InstallFailOpenFileLoop();
+		}
+	};
+
+	struct UnkCOCFileResetHook {
+		static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x17F350) };
+
+		struct TrampolineCall : Xbyak::CodeGenerator
+		{
+			// Call OpenFileLoop method, and check if file successfully opened
+			TrampolineCall(std::uintptr_t jmpaddr, std::uintptr_t func)
+			{
+				Xbyak::Label funcLabel;
+				Xbyak::Label resumeLabel;
+				sub(rsp, 0x20);
+				call(ptr[rip + funcLabel]);
+				add(rsp, 0x20);
+				jmp(resumeLabel);
+				L(funcLabel);
+				dq(func);
+				L(resumeLabel);
+			}
+		};
+
+		static void UnkTESFile(RE::TESFile* a_file) {
+			using func_t = decltype(&UnkTESFile);
+			REL::Relocation<func_t> func{ REL::Offset(0x18FBA0) };
+			return func(a_file);
+		}
+
+		// VR loops over loadedmods and calls some resetting function, then clears loadedmods
+		// SE loops over regular/small files, calls resetting function then clears the arrays
+		static void ClearFilesLoop() {
+			logger::debug("ClearFilesLoop called!");
+			auto handler = DataHandler::GetSingleton();
+			for (auto file : handler->compiledFileCollection.files) {
+				if (file->lastError.underlying() != 0) {
+					UnkTESFile(file);
+				}
+			}
+			handler->compiledFileCollection.files.clear();
+			for (auto file : handler->compiledFileCollection.smallFiles) {
+				if (file->lastError.underlying() != 0) {
+					UnkTESFile(file);
+				}
+			}
+			handler->compiledFileCollection.smallFiles.clear();
+		}
+
+		static void Install() {
+			std::uintptr_t start = target.address() + 0x70B;
+			std::uintptr_t end = target.address() + 0x757;
+			REL::safe_fill(start, REL::NOP, end - start);
+			auto trampolineJmp = TrampolineCall(end,stl::unrestricted_cast<std::uintptr_t>(ClearFilesLoop));
+			REL::safe_write(start, trampolineJmp.getCode(), trampolineJmp.getSize());
+		}
+	};
+
 	struct DuplicateHook
 	{
 		// Copy over the smallCompileIndex, which is padding in VR normally
@@ -176,11 +347,13 @@ namespace tesfilehooks
 	static inline void InstallHooks()
 	{
 		DuplicateHook::Install();
-		LoadedModCountHook::Install();  // TODO: Remove this once we fully hook uses of this
+		LoadedModCountHook::Install();
 		GetModAtIndexHook::Install();   // TODO: Remove this once we fully hook uses of this
 		IsGameModdedHook::Install();
 		TESQuestHook::Install();
 		UnkTESTopicHook::Install();
 		UnkTerrainHook::Install();
+		UnkCOCHook::Install();
+		UnkCOCFileResetHook::Install();
 	}
 }
