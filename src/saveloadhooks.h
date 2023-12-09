@@ -76,21 +76,21 @@ namespace saveloadhooks
 		static void BGSLoadGameBufferFile(RE::BGSLoadGameBuffer* a_buffer, Win32FileType* a_unk)
 		{
 			using func_t = decltype(&BGSLoadGameBufferFile);
-			REL::Relocation<func_t> func{ REL::Offset(0x5978F0) };
+			REL::Relocation<func_t> func{ REL::Offset(0x59EFB0) };
 			return func(a_buffer, a_unk);
 		}
 
 		static void BGSLoadGameBufferReadString(RE::BGSLoadGameBuffer* a_buffer, char a_string[])
 		{
 			using func_t = decltype(&BGSLoadGameBufferReadString);
-			REL::Relocation<func_t> func{ REL::Offset(0x597B20) };
+			REL::Relocation<func_t> func{ REL::Offset(0x59F1E0) };
 			return func(a_buffer, a_string);
 		}
 
 		static void BGSSaveGameBufferDTOR(RE::BGSLoadGameBuffer* a_buffer)
 		{
 			using func_t = decltype(&BGSSaveGameBufferDTOR);
-			REL::Relocation<func_t> func{ REL::Offset(0x5978A0) };
+			REL::Relocation<func_t> func{ REL::Offset(0x59EF60) };
 			return func(a_buffer);
 		}
 
