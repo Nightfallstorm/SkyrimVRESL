@@ -80,7 +80,10 @@ namespace tesfilehooks
 		{
 			REL::Relocation<std::uintptr_t> target{ REL::Offset(0x4B80A0 + 0x159) };
 			SKSE::AllocTrampoline(14);
-			SKSE::GetTrampoline().write_branch<5>(target.address(), thunk);
+			SKSE::GetTrampoline().write_call<5>(target.address(), UnkTerrainHook::thunk);
+			REL::Relocation<std::uintptr_t> target2{ REL::Offset(0x4B80A0 + 0xA3) };
+			SKSE::AllocTrampoline(14);
+			SKSE::GetTrampoline().write_call<5>(target2.address(), UnkTerrainHook::thunk);
 		}
 	};
 
@@ -119,11 +122,11 @@ namespace tesfilehooks
 
 	struct LoadedModCountHook
 	{
-		// TODO: Temp workaround. We MUST properly fixup uses of this function
 		static std::uint32_t thunk(DataHandler* a_handler)
 		{
-			RE::DebugMessageBox("LoadedModCountHook invoked!!! not intended!");
-			return a_handler->compiledFileCollection.files.size();
+			// This function should never be invoked since we hooked all usages, bad behavior occurred!
+			// Crash here for crashlog to show missing usage
+			throw std::invalid_argument("Unexpected invocation of LoadedModCountHook!");
 		}
 
 		static void Install()
@@ -176,8 +179,8 @@ namespace tesfilehooks
 		LoadedModCountHook::Install();  // TODO: Remove this once we fully hook uses of this
 		GetModAtIndexHook::Install();   // TODO: Remove this once we fully hook uses of this
 		IsGameModdedHook::Install();
-		//TESQuestHook::Install();
-		//UnkTESTopicHook::Install();
-		//UnkTerrainHook::Install();
+		TESQuestHook::Install();
+		UnkTESTopicHook::Install();
+		UnkTerrainHook::Install();
 	}
 }
