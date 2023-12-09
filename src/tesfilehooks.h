@@ -90,6 +90,8 @@ namespace tesfilehooks
 	struct UnkCOCHook {
 		static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x17C000) };
 		
+		static inline std::uint32_t fileIndexCount = 0;
+
 		struct TrampolineCOCCall : Xbyak::CodeGenerator
 		{
 			// Call OpenFileLoop method, and check if file successfully opened
@@ -98,7 +100,6 @@ namespace tesfilehooks
 				Xbyak::Label funcLabel;
 				Xbyak::Label succLabel;
 				Xbyak::Label failLabel;
-				mov(ecx, edi);
 				sub(rsp, 0x20);
 				call(ptr[rip + funcLabel]);
 				add(rsp, 0x20);
@@ -124,17 +125,17 @@ namespace tesfilehooks
 				Xbyak::Label funcLabel;
 				Xbyak::Label succLabel;
 				Xbyak::Label failLabel;
-				inc(edi);
-				mov(ecx, edi);
 				sub(rsp, 0x20);
 				call(ptr[rip + funcLabel]);
 				add(rsp, 0x20);
 				test(rax, rax);
-				jz(failLabel);
+				jnz(failLabel);
 				L(succLabel);
 				mov(rcx, jmpOnSuccess);
 				jmp(rcx);
 				L(failLabel);
+				mov(rcx, fileIndexCount);
+				mov(dword [rcx], 0);
 				mov(rcx, jmpOnFail);
 				jmp(rcx);
 				L(funcLabel);
@@ -142,17 +143,18 @@ namespace tesfilehooks
 			}
 		};
 
-		static bool IndexCheck(std::uint32_t a_index) {
-			return a_index >= filesArray.size();
+		static bool IndexCheck() {
+			fileIndexCount++;
+			return fileIndexCount >= filesArray.size();
 		}
 
-		static RE::TESFile* OpenFileLoop(std::uint32_t a_index) {
+		static RE::TESFile* OpenFileLoop() {
 			// VR loops through and opens loadedMods until one returns true
 			// SE loops through `files` then `activeFile` and opens until one returns true
-			logger::debug("OpenFileLoop called with index {}", a_index);
+			logger::debug("OpenFileLoop called with index {}", fileIndexCount);
 			PopulateFilesArray();
-			if (filesArray[a_index]->OpenTES(RE::NiFile::OpenMode::kReadOnly, false)) {
-				return filesArray[a_index];
+			if (filesArray[fileIndexCount]->OpenTES(RE::NiFile::OpenMode::kReadOnly, false)) {
+				return filesArray[fileIndexCount];
 			}
 			return nullptr;
 		}
