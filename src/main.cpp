@@ -1,5 +1,6 @@
 #include "DataHandler.h"
 #include "hooks.h"
+#include "sksevrhooks.h"
 #include "saveloadhooks.h"
 #include "startuphooks.h"
 #include "tesfilehooks.h"
@@ -104,6 +105,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	startuphooks::InstallHooks();
 	saveloadhooks::InstallHooks();
 	eslhooks::InstallHooks();
+	SKSEVRHooks::Install(a_skse->SKSEVersion());
 	logger::info("finish hooks");
 	return true;
 }
