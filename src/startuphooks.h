@@ -28,6 +28,13 @@ namespace startuphooks
 			return;
 		}
 
+#ifdef BACKWARDS_COMPATIBLE
+		if (!a_file->IsLight()) {
+			handler->loadedMods[handler->loadedModCount] = a_file;
+			handler->loadedModCount++;
+		}
+#endif
+
 		if (a_file->IsLight()) {
 			fileCollection.smallFiles.push_back(a_file);
 			auto smallFileCompileIndex = fileCollection.smallFiles.size() - 1;
@@ -42,6 +49,7 @@ namespace startuphooks
 			a_file->flags |= fileCompileIndex << 24;
 			a_file->compileIndex = fileCompileIndex;
 			a_file->smallFileCompileIndex = 0;
+
 		}
 		logger::debug("AddFile finished");
 	}
@@ -172,8 +180,10 @@ namespace startuphooks
 
 		static void EraseLoadedModCountReset()
 		{
+#ifndef BACKWARDS_COMPATIBLE
 			REL::safe_fill(target.address() + 0x6B, REL::NOP, 0x3);
 			logger::info("Erased LoadedModCountReset");
+#endif
 		}
 
 		static void InstallAddFile()

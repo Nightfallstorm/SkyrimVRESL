@@ -11,6 +11,7 @@
 #include "RE/T/TESForm.h"
 #include <detours/detours.h>
 
+#define BACKWARDS_COMPATIBLE
 using namespace RE;
 
 class DataHandler : public
@@ -22,6 +23,7 @@ class DataHandler : public
 {
 public:
 	static DataHandler* GetSingleton();
+	static void InstallHooks();
 #ifndef BACKWARDS_COMPATIBLE
 	// members
 	std::uint8_t pad001;                                               // 001
@@ -63,6 +65,8 @@ public:
 static_assert(sizeof(DataHandler) == 0x1590);
 static_assert(offsetof(DataHandler, masterSave) == 0x1570);
 #else
-	TESFileCollection compiledFileCollection;  // D70
+	TESFileCollection compiledFileCollection;  // 1590
 };
+static_assert(sizeof(DataHandler) == 0x15C0);
+static_assert(offsetof(DataHandler, compiledFileCollection) == 0x1590);
 #endif
