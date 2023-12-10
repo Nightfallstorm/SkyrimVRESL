@@ -13,11 +13,16 @@
 
 using namespace RE;
 
-class DataHandler : public BSTSingletonSDM<DataHandler>
+class DataHandler : public
+#ifndef BACKWARDS_COMPATIBLE
+	 BSTSingletonSDM<DataHandler>
+#else
+	TESDataHandler
+#endif
 {
 public:
 	static DataHandler* GetSingleton();
-
+#ifndef BACKWARDS_COMPATIBLE
 	// members
 	std::uint8_t pad001;                                               // 001
 	std::uint16_t pad002;                                              // 002
@@ -57,3 +62,7 @@ public:
 };
 static_assert(sizeof(DataHandler) == 0x1590);
 static_assert(offsetof(DataHandler, masterSave) == 0x1570);
+#else
+	TESFileCollection compiledFileCollection;  // D70
+};
+#endif
