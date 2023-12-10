@@ -326,8 +326,130 @@ namespace eslhooks
 		}
 	}
 
+	namespace isesl {
+	
+		struct GetFactTintHook {
+			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x36FB70) };
+
+			static void thunk(char* const buffer, const size_t a_size, const char* a_format, char a_fileName[], RE::FormID a_formID)
+			{
+				auto file = RE::TESForm::LookupByID(a_formID)->GetFile(0);
+				auto formID = file->IsLight() ? a_formID & 0xFFF : a_formID & 0xFFFFFF;
+				return func(buffer, a_size, a_format, a_fileName, formID);
+			}
+
+			static inline REL::Relocation<decltype(thunk)> func;
+
+			static void Install() {
+				REL::safe_fill(target.address() + 0x77, REL::NOP, 0x5); // Erase truncation of plugin index on formID
+				pstl::write_thunk_call<GetFactTintHook>(target.address() + 0x8A);
+				logger::info("GetFactTintHook hooked at {:x}", target.address() + 0x8A);
+				logger::info("GetFactTintHook hooked at offset {:x}", target.offset() + 0x8A);
+			}
+		};
+
+		struct GetFactTintHook2
+		{
+			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x36FC20) };
+
+			static void thunk(char* const buffer, const size_t a_size, const char* a_format, char a_fileName[], RE::FormID a_formID)
+			{
+				auto file = RE::TESForm::LookupByID(a_formID)->GetFile(0);
+				auto formID = file->IsLight() ? a_formID & 0xFFF : a_formID & 0xFFFFFF;
+				return func(buffer, a_size, a_format, a_fileName, formID);
+			}
+
+			static inline REL::Relocation<decltype(thunk)> func;
+
+			static void Install()
+			{
+				REL::safe_fill(target.address() + 0x70, REL::NOP, 0x6);  // Erase truncation of plugin index on formID
+				pstl::write_thunk_call<GetFactTintHook2>(target.address() + 0x8F);
+				logger::info("GetFactTintHook2 hooked at {:x}", target.address() + 0x8F);
+				logger::info("GetFactTintHook2 hooked at offset {:x}", target.offset() + 0x8F);
+			}
+		};
+
+		struct GetMeshFilenameHook
+		{
+			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x372B30) };
+
+			static void thunk(char* const buffer, const size_t a_size, const char* a_format, char a_fileName[], RE::FormID a_formID)
+			{
+				auto file = RE::TESForm::LookupByID(a_formID)->GetFile(0);
+				auto formID = file->IsLight() ? a_formID & 0xFFF : a_formID & 0xFFFFFF;
+				return func(buffer, a_size, a_format, a_fileName, formID);
+			}
+
+			static inline REL::Relocation<decltype(thunk)> func;
+
+			static void Install()
+			{
+				REL::safe_fill(target.address() + 0x72, REL::NOP, 0x5);  // Erase truncation of plugin index on formID
+				pstl::write_thunk_call<GetMeshFilenameHook>(target.address() + 0x87);
+				logger::info("GetMeshFilenameHook hooked at {:x}", target.address() + 0x87);
+				logger::info("GetMeshFilenameHook hooked at offset {:x}", target.offset() + 0x87);
+			}
+		};
+
+		struct GetMeshFilenameHook2
+		{
+			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x372BD0) };
+
+			static void thunk(char* const buffer, const size_t a_size, const char* a_format, char a_fileName[], RE::FormID a_formID)
+			{
+				auto file = RE::TESForm::LookupByID(a_formID)->GetFile(0);
+				auto formID = file->IsLight() ? a_formID & 0xFFF : a_formID & 0xFFFFFF;
+				return func(buffer, a_size, a_format, a_fileName, formID);
+			}
+
+			static inline REL::Relocation<decltype(thunk)> func;
+
+			static void Install()
+			{
+				REL::safe_fill(target.address() + 0xBD, REL::NOP, 0x6);  // Erase truncation of plugin index on formID
+				pstl::write_thunk_call<GetMeshFilenameHook2>(target.address() + 0xDE);
+				logger::info("GetMeshFilenameHook2 hooked at {:x}", target.address() + 0xDE);
+				logger::info("GetMeshFilenameHook2 hooked at offset {:x}", target.offset() + 0xDE);
+			}
+		};
+
+		struct UnkTopicHook2
+		{
+			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x39D660) };
+
+			static void thunk(char* const buffer, const size_t a_size, const char* a_format, char a_unk[], RE::FormID a_formID, int a_unk2)
+			{
+				auto file = RE::TESForm::LookupByID(a_formID)->GetFile(0);
+				auto formID = file->IsLight() ? a_formID & 0xFFF : a_formID & 0xFFFFFF;
+				return func(buffer, a_size, a_format, a_unk, formID, a_unk2);
+			}
+
+			static inline REL::Relocation<decltype(thunk)> func;
+
+			static void Install()
+			{
+				REL::safe_fill(target.address() + 0x7E, REL::NOP, 0x5);  // Erase truncation of plugin index on formID
+				pstl::write_thunk_call<UnkTopicHook2>(target.address() + 0xA4);
+				logger::info("UnkTopicHook2 hooked at {:x}", target.address() + 0xA4);
+				logger::info("UnkTopicHook2 hooked at offset {:x}", target.offset() + 0xA4);
+			}
+		};
+
+
+
+		static void InstallHooks() {
+			GetFactTintHook::Install();
+			GetFactTintHook2::Install();
+			GetMeshFilenameHook::Install();
+			GetMeshFilenameHook2::Install();
+			UnkTopicHook2::Install();
+		}
+	}
+
 	static void InstallHooks() {
 		ESLFlagHook::Install();
 		adjustFormID::InstallHooks();
+		isesl::InstallHooks();
 	}
 }
