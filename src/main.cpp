@@ -104,9 +104,6 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	startuphooks::InstallHooks();
 	saveloadhooks::InstallHooks();
 	eslhooks::InstallHooks();
-	//while (!IsDebuggerPresent()) {
-	//	Sleep(1000);
-	//}
 	logger::info("finish hooks");
 	return true;
 }

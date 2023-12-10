@@ -79,7 +79,7 @@ namespace eslhooks
 			if (a_index > a_file->masterCount) {
 				return nullptr;
 			}
-			if (!a_index || a_index == (std::uint32_t)-1) {
+			if (!a_index) {
 				return a_file;
 			}
 			if (!a_file->masterPtrs) {
@@ -286,12 +286,19 @@ namespace eslhooks
 				}
 			};
 
+			static RE::TESFile* GetMaster(RE::TESFile* a_file) {
+				std::uint32_t formID = a_file->currentform.formID;
+				auto masterIndex = formID >> 24;
+				if (masterIndex == -1 || (masterIndex + 1u) > a_file->masterCount || !a_file->masterPtrs) {
+					return a_file;
+				}
+
+				return a_file->masterPtrs[masterIndex];
+			}
+
 			static void AdjustCurrentFormID(RE::TESFile* a_file)
 			{
-				auto master = GetMasterAtIndex(a_file, HIBYTE(a_file->currentform.formID) + 1);
-				if (!master) {
-					master = a_file;
-				}
+				auto master = GetMaster(a_file);
 				AdjustFormIDFileIndex(master, a_file->currentform.formID);
 				if (IsFormIDReserved((a_file->currentform.formID & 0xFFFFFF)))
 					a_file->currentform.formID &= 0xFFFFFF;
@@ -313,9 +320,9 @@ namespace eslhooks
 		static void InstallHooks() {
 			PapyrusGetFormFromFileHook::Install();
 			UnkFileFormReadHook::Install();
-			//AddCompileIndexHook::Install();
-			//UnkDataHandlerWorldspaceFormLookupHook::Install();
-			//UnkCurrentFormIDHook::Install();
+			AddCompileIndexHook::Install();
+			UnkDataHandlerWorldspaceFormLookupHook::Install();
+			UnkCurrentFormIDHook::Install();
 		}
 	}
 
