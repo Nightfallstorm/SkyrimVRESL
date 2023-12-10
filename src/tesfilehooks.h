@@ -249,6 +249,10 @@ namespace tesfilehooks
 				}
 			}
 			handler->compiledFileCollection.smallFiles.clear();
+
+#ifdef BACKWARDS_COMPATIBLE
+			handler->loadedModCount = 0;
+#endif
 		}
 
 		static void Install() {

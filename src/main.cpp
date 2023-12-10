@@ -112,6 +112,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	startuphooks::InstallHooks();
 	saveloadhooks::InstallHooks();
 	eslhooks::InstallHooks();
+	DataHandler::InstallHooks();
 	SKSEVRHooks::Install(a_skse->SKSEVersion());
 	logger::info("finish hooks");
 	return true;

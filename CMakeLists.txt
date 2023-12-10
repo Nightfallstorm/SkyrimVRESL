@@ -9,6 +9,7 @@ set(VR_VERSION 1)
 option(COPY_BUILD "Copy the build output to the Skyrim directory." FALSE)
 option(BUILD_SKYRIMVR "Build for Skyrim VR" OFF)
 option(BUILD_SKYRIMAE "Build for Skyrim AE" OFF)
+option(BACKWARDS_COMPATIBLE "Use TESDataHandler for inheritance" OFF)
 
 # ---- Cache build vars ----
 
@@ -55,6 +56,11 @@ else()
 	set(SkyrimPath ${Skyrim64Path})
 	set(SkyrimVersion "Skyrim SSE")
 endif()
+
+if(BACKWARDS_COMPATIBLE)
+	add_compile_definitions(BACKWARDS_COMPATIBLE)
+endif()
+
 find_commonlib_path()
 message(
 	STATUS
