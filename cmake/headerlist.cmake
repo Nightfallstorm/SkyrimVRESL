@@ -5,4 +5,5 @@ set(headers ${headers}
 	src/tesfilehooks.h
 	src/saveloadhooks.h
 	src/startuphooks.h
+	src/eslhooks.h
 )

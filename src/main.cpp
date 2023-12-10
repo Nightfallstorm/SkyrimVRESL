@@ -3,6 +3,7 @@
 #include "saveloadhooks.h"
 #include "startuphooks.h"
 #include "tesfilehooks.h"
+#include "eslhooks.h"
 
 void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 {
@@ -12,13 +13,29 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 			logger::info("kDataLoaded: Printing files");
 			auto handler = DataHandler::GetSingleton();
 			for (auto file : handler->compiledFileCollection.files) {
-				logger::info("Regular file {} recordFlags: {:x}", std::string(file->fileName), file->recordFlags.underlying());
+				logger::info("Regular file {} recordFlags: {:x} index {:x}",
+					std::string(file->fileName),
+					file->recordFlags.underlying(),
+					file->compileIndex
+				);
 			}
 
 			for (auto file : handler->compiledFileCollection.smallFiles) {
-				logger::info("Small file {} recordFlags: {:x}", std::string(file->fileName), file->recordFlags.underlying());
+				logger::info("Small file {} recordFlags: {:x} index {:x}", 
+					std::string(file->fileName), 
+					file->recordFlags.underlying(),
+					file->smallFileCompileIndex
+				);
 			}
 
+			auto [formMap, lock] = RE::TESForm::GetAllForms();
+			lock.get().LockForRead();
+			for (auto& [formID, form] : *formMap) {
+				if (formID >> 24 == 0xFE) {
+					logger::debug("ESL form (map ID){:x} (real ID){:x} from file {} found", formID, form->formID, std::string(form->GetFile()->fileName));
+				}
+			}
+			lock.get().UnlockForRead();
 			// TODO: Runtime hooks here?
 		}
 	default:
@@ -77,7 +94,6 @@ void InitializeLog()
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
 	InitializeLog();
-
 	logger::info("loaded plugin");
 
 	SKSE::Init(a_skse);
@@ -87,6 +103,10 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	tesfilehooks::InstallHooks();
 	startuphooks::InstallHooks();
 	saveloadhooks::InstallHooks();
+	eslhooks::InstallHooks();
+	//while (!IsDebuggerPresent()) {
+	//	Sleep(1000);
+	//}
 	logger::info("finish hooks");
 	return true;
 }
