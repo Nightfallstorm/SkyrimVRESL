@@ -306,11 +306,159 @@ namespace startuphooks
 		}
 	};
 
+	namespace eslExtensionHooks {
+		struct ParsePluginTXTHook
+		{
+			// Hook plugin parsing to include .esl along with .esm and .esp
+
+			static const char* thunk(const char* a_fileName, const char* a_esmString)
+			{
+				throw std::invalid_argument("TEST");
+				//auto string = std::strstr(a_fileName, a_esmString);
+				//if (!string) {
+				//	string = std::strstr(a_fileName, ".esl");
+				//}
+				//logger::info("{} returns string {}", a_fileName, string);
+				//return string;
+			}
+
+			static inline REL::Relocation<decltype(thunk)> func;
+
+			static void Install()
+			{
+				REL::Relocation<std::uintptr_t> target{ REL::Offset(0xC70FB0 + 0x1ED) };
+				pstl::write_thunk_call<ParsePluginTXTHook>(target.address());
+				REL::safe_fill(target.address(), REL::NOP, 0x100);
+				logger::info("Hooked PluginParsing at {:x}", target.address());
+				logger::info("Hooked PluginParsing at offset {:x}", target.offset());
+			}
+		};
+
+		struct BuildFileListHook {
+			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x17E540) };
+
+			struct TrampolineCall : Xbyak::CodeGenerator
+			{
+				TrampolineCall(std::uintptr_t jmpAfterCall, std::uintptr_t func)
+				{
+					Xbyak::Label funcLabel;
+					lea(rcx, ptr[rbp - 0x5C]); // Move fileName into place
+					sub(rsp, 0x20);
+					call(ptr[rip + funcLabel]);
+					add(rsp, 0x20);
+					mov(rcx, jmpAfterCall);
+					jmp(rcx);
+					L(funcLabel);
+					dq(func);
+				}
+			};
+
+			static bool IsFilenameAPlugin(const char* a_fileName) {
+				auto string = std::string(a_fileName);
+				std::transform(string.begin(), string.end(), string.begin(), ::tolower);
+				return string.ends_with(".esl") || string.ends_with(".esm") || string.ends_with(".esp");
+			}
+
+			static void Install() {
+				std::uintptr_t start = target.address() + 0xB0; // TODO
+				std::uintptr_t end = target.address() + 0x113;  // TODO
+				REL::safe_fill(start, REL::NOP, end - start);
+
+				auto trampolineJmp = TrampolineCall(end, stl::unrestricted_cast<std::uintptr_t>(IsFilenameAPlugin));
+				REL::safe_write(start, trampolineJmp.getCode(), trampolineJmp.getSize());
+
+				if (trampolineJmp.getSize() > (end - start)) {
+					logger::critical("BuildFileListHook is {} bytes too big!", trampolineJmp.getSize() - (end - start));
+				}
+
+				logger::info("BuildFileListHook hooked at {:x}", target.address() + 0xB0);
+				logger::info("BuildFileListHook hooked at offset {:x}", target.offset() + 0xB0);
+			}
+		};
+
+		struct ParseINIHook {
+			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x5C18D0) };
+
+			static std::uint64_t thunk(char a_extension[], const char* a_esm)
+			{
+				logger::debug("ParseINIHook Checking {}", a_extension);
+				auto result = func(a_extension, a_esm);
+				if (!result) {
+					result = func(a_extension, ".esl");
+				}
+				return result;
+			}
+
+			static inline REL::Relocation<decltype(thunk)> func;
+
+			static void Install()
+			{
+				pstl::write_thunk_call<ParseINIHook>(target.address() + 0xA6);
+				logger::info("ParseINIHook hooked at {:x}", target.address() + 0xA6);
+				logger::info("ParseINIHook hooked at offset {:x}", target.offset() + 0xA6);
+			}
+		};
+
+		struct UnkSetCheckHook
+		{
+			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x51F890) };
+
+			static bool thunk(char* a_extension, const char* a_esm) {
+				logger::info("UnkSetCheckHook Checking {}", a_extension);
+				auto isESM = func(a_extension, a_esm) == 0;
+				auto isESL = func(a_extension, ".esl") == 0;
+				logger::info("UnkSetCheckHook Result: {}", !(isESM || isESL));
+				return !(isESM || isESL);
+			}
+
+			static inline REL::Relocation<decltype(thunk)> func;
+
+			static void Install() {
+				pstl::write_thunk_call<UnkSetCheckHook>(target.address() + 0x1BA);
+				logger::info("UnkSetCheckHook hooked at {:x}", target.address() + 0x1BA);
+				logger::info("UnkSetCheckHook hooked at offset {:x}", target.offset() + 0x1BA);
+			}
+		};
+
+		struct UnkHook
+		{
+			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x51DC00) };
+
+			static bool thunk(char* a_extension, const char* a_esm)
+			{
+				logger::info("UnkHook Checking {}", a_extension);
+				auto isESM = func(a_extension, a_esm) == 0;
+				auto isESL = func(a_extension, ".esl") == 0;
+				logger::info("UnkHook Result: {}", !(isESM || isESL));
+				return !(isESM || isESL);
+			}
+
+			static inline REL::Relocation<decltype(thunk)> func;
+
+			static void Install()
+			{
+				pstl::write_thunk_call<UnkHook>(target.address() + 0x194);
+				logger::info("UnkHook hooked at {:x}", target.address() + 0x194);
+				logger::info("UnkHook hooked at offset {:x}", target.offset() + 0x194);
+			}
+		};
+
+		static inline void InstallHooks() {
+			//ParsePluginTXTHook::Install(); // Unused, patching on the off-chance it is
+			//BuildFileListHook::Install();
+			//ParseINIHook::Install();
+			//UnkSetCheckHook::Install();
+			//UnkHook::Install();
+			// TODO: Finish `.esl` support. With current hooks, file gets loaded and fails the check flag in some way that will need patching
+		}
+	}
+
 	static inline void InstallHooks()
 	{
 		AddTESFileHook::Install();
 		AddTESFileHook1::Install();
 		AddTESFileHook2::Install();
 		CompileFilesHook::Install();
+		eslExtensionHooks::InstallHooks();
 	}
 }
