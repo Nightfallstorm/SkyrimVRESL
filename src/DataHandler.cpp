@@ -13,7 +13,7 @@ struct DataHandlerCTORHook
 
 	static DataHandler* thunk(RE::TESDataHandler* a_handlerstruct)
 	{
-		RE::TESDataHandler* newHandler = RE::calloc<DataHandler>(1);
+		RE::TESDataHandler* newHandler = reinterpret_cast<RE::TESDataHandler*>(RE::calloc<DataHandler>(1));
 		return func(newHandler);
 	}
 
