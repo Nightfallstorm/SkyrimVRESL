@@ -11,7 +11,6 @@
 #include "RE/T/TESForm.h"
 #include <detours/detours.h>
 
-#define BACKWARDS_COMPATIBLE
 using namespace RE;
 
 class DataHandler : public
