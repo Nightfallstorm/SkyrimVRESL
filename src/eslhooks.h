@@ -307,9 +307,10 @@ namespace eslhooks
 			static void AdjustCurrentFormID(RE::TESFile* a_file)
 			{
 				auto master = GetMaster(a_file);
-				AdjustFormIDFileIndex(master, a_file->currentform.formID);
-				if (IsFormIDReserved((a_file->currentform.formID & 0xFFFFFF)))
-					a_file->currentform.formID &= 0xFFFFFF;
+				
+				if (!IsFormIDReserved((a_file->currentform.formID))) {
+					AdjustFormIDFileIndex(master, a_file->currentform.formID);
+				}
 			}
 
 			static void Install()
@@ -326,6 +327,36 @@ namespace eslhooks
 			}
 		};
 
+		// Credit to Nukem for backported ESL support: https://github.com/Nukem9/skyrimse-backported-esl-support/blob/7d382032e535e594ffc2b2aef2ce970b8763993e/source/Impl/LoaderHooks.cpp
+		struct BackwardsESLHeaderSupportHook
+		{
+			constexpr static float HedrVersion16659 = 1.70f;   // <= 1.6.659
+			constexpr static float HedrVersion161126 = 1.71f;  // >= 1.6.1126
+
+			static bool thunk(RE::TESFile* a_this, void* a_data, std::uint32_t a_maxSize)
+			{
+				if (!a_this->ReadData(a_data, a_maxSize))
+					return false;
+
+				// Patch the HEDR record data
+				auto& version = *reinterpret_cast<float*>(a_data);
+
+				if (version > HedrVersion16659 && version <= HedrVersion161126) {
+					version = HedrVersion16659;
+					SKSE::log::info("Emulated old header version for {}.", a_this->fileName);
+				}
+
+				return true;
+			}
+
+			static inline REL::Relocation<decltype(thunk)> func;
+
+			static void Install() {
+				REL::Relocation<std::uintptr_t> target{ REL::Offset(0x18AEB0 + 0x44E) };
+				pstl::write_thunk_call<BackwardsESLHeaderSupportHook>(target.address());
+			}
+		};
+
 		static void InstallHooks()
 		{
 			PapyrusGetFormFromFileHook::Install();
@@ -333,6 +364,7 @@ namespace eslhooks
 			AddCompileIndexHook::Install();
 			UnkDataHandlerWorldspaceFormLookupHook::Install();
 			UnkCurrentFormIDHook::Install();
+			BackwardsESLHeaderSupportHook::Install();
 		}
 	}
 
