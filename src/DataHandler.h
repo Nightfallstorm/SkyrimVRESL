@@ -15,9 +15,9 @@ using namespace RE;
 
 class DataHandler : public
 #ifndef BACKWARDS_COMPATIBLE
-	 BSTSingletonSDM<DataHandler>
+					BSTSingletonSDM<DataHandler>
 #else
-	TESDataHandler
+					TESDataHandler
 #endif
 {
 public:
@@ -38,7 +38,7 @@ public:
 	std::uint32_t padD54;                                              // D54
 	TESFile* activeFile;                                               // D58
 	BSSimpleList<TESFile*> files;                                      // D60
-// ~~~~~~~~~~~~~~~~~ below member differs from VR~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+																	   // ~~~~~~~~~~~~~~~~~ below member differs from VR~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	TESFileCollection compiledFileCollection;                          // D70
 	std::uint64_t fakeVRpadding[0xFA];                                 // D78
 																	   /*
@@ -46,7 +46,7 @@ public:
 		std::uint32_t         pad14;              // D74
 		TESFile*              loadedMods[0xFF];   // D78
 */
-// ~~~~~~~~~~~~~~~~~ end VR difference ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+																	   // ~~~~~~~~~~~~~~~~~ end VR difference ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	bool masterSave;                                                   // 1570
 	bool blockSave;                                                    // 1571
 	bool saveLoadGame;                                                 // 1572

@@ -1,10 +1,11 @@
 #pragma once
-#include <detours/detours.h>
 #include "DataHandler.h"
+#include <detours/detours.h>
 
-struct {
+struct
+{
 	std::uint64_t signature = 0x123456789ABCDEF;
-	
+
 } cehelper;
 namespace eslhooks
 {
@@ -47,7 +48,7 @@ namespace eslhooks
 			if (flags & 0x200) {
 				a_self->recordFlags.set(FileFlag::kSmallFile);
 			}
-			
+
 			auto fileName = std::string(a_self->fileName);
 			if (fileName.ends_with("esm")) {
 				a_self->recordFlags.set(FileFlag::kMaster);
@@ -70,7 +71,7 @@ namespace eslhooks
 				logger::critical("SetESLFlag trampoline hook {} bytes too big!", trampolineJmp.getSize() - (end - start));
 			}
 		}
-	};	
+	};
 
 	namespace adjustFormID
 	{
@@ -93,7 +94,7 @@ namespace eslhooks
 			if (a_file->IsLight()) {
 				logger::debug("Adjust form {:x} for file {}", a_formID, std::string(a_file->fileName));
 			}
-			
+
 			a_formID &= 0xFFFFFFu;  // Strip file index, now 0x00XXXXXX;
 			std::uint32_t a_fileIndex = 0;
 			if (a_file->IsLight()) {
@@ -109,7 +110,8 @@ namespace eslhooks
 			}
 		}
 
-		static bool IsFormIDReserved(RE::FormID a_formID) {
+		static bool IsFormIDReserved(RE::FormID a_formID)
+		{
 			return a_formID <= 0x7FF;
 		}
 
@@ -134,13 +136,15 @@ namespace eslhooks
 				}
 			};
 
-			static RE::TESForm* GetFormFromFile(RE::TESFile* a_file, RE::FormID a_rawID) {
+			static RE::TESForm* GetFormFromFile(RE::TESFile* a_file, RE::FormID a_rawID)
+			{
 				auto formID = a_rawID;
 				AdjustFormIDFileIndex(a_file, formID);
 				return RE::TESForm::LookupByID(formID);
 			}
 
-			static void Install() {
+			static void Install()
+			{
 				// TODO: Don't conflict with MergeMapper for papyrus_GetFormFromID
 				std::uintptr_t start = target.address() + 0x50;
 				std::uintptr_t end = target.address() + 0x6B;
@@ -177,7 +181,8 @@ namespace eslhooks
 				}
 			};
 
-			static RE::FormID AdjustFormID(RE::TESFile* a_file, RE::FormID a_rawID) {
+			static RE::FormID AdjustFormID(RE::TESFile* a_file, RE::FormID a_rawID)
+			{
 				auto formID = a_rawID;
 				AdjustFormIDFileIndex(a_file, formID);
 				return formID;
@@ -195,7 +200,6 @@ namespace eslhooks
 				auto result = trampoline.allocate(trampolineJmp);
 				SKSE::AllocTrampoline(14);
 				trampoline.write_branch<5>(start, (std::uintptr_t)result);
-
 			}
 		};
 
@@ -204,12 +208,13 @@ namespace eslhooks
 			// TODO: HookName may not be accurate, read code and find better name
 			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x1A5510) };
 
-			static void AddCompileIndex(RE::FormID& a_formID, RE::TESFile* a_file) {
+			static void AddCompileIndex(RE::FormID& a_formID, RE::TESFile* a_file)
+			{
 				// TODO: 0x7FF check may need modification for newest ESLs from 1.6.1130
 				if (IsFormIDReserved(a_formID) || !a_file) {
 					return;
 				}
-				
+
 				auto index = (a_formID >> 24) + 1;
 				auto master = GetMasterAtIndex(a_file, index);
 				if (!master) {
@@ -218,7 +223,8 @@ namespace eslhooks
 				AdjustFormIDFileIndex(master, a_formID);
 			}
 
-			static void Install() {
+			static void Install()
+			{
 				SKSE::GetTrampoline().write_branch<5>(target.address(), AddCompileIndex);
 			}
 		};
@@ -267,7 +273,8 @@ namespace eslhooks
 			}
 		};
 
-		struct UnkCurrentFormIDHook {
+		struct UnkCurrentFormIDHook
+		{
 			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x18EAD0) };
 
 			struct TrampolineCall : Xbyak::CodeGenerator
@@ -286,7 +293,8 @@ namespace eslhooks
 				}
 			};
 
-			static RE::TESFile* GetMaster(RE::TESFile* a_file) {
+			static RE::TESFile* GetMaster(RE::TESFile* a_file)
+			{
 				std::uint32_t formID = a_file->currentform.formID;
 				auto masterIndex = formID >> 24;
 				if (masterIndex == -1 || (masterIndex + 1u) > a_file->masterCount || !a_file->masterPtrs) {
@@ -304,7 +312,8 @@ namespace eslhooks
 					a_file->currentform.formID &= 0xFFFFFF;
 			}
 
-			static void Install() {
+			static void Install()
+			{
 				std::uintptr_t start = target.address() + 0x113;
 				std::uintptr_t end = target.address() + 0x198;
 				REL::safe_fill(start, REL::NOP, end - start);
@@ -317,7 +326,8 @@ namespace eslhooks
 			}
 		};
 
-		static void InstallHooks() {
+		static void InstallHooks()
+		{
 			PapyrusGetFormFromFileHook::Install();
 			UnkFileFormReadHook::Install();
 			AddCompileIndexHook::Install();
@@ -326,9 +336,11 @@ namespace eslhooks
 		}
 	}
 
-	namespace isesl {
-	
-		struct GetFactTintHook {
+	namespace isesl
+	{
+
+		struct GetFactTintHook
+		{
 			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x36FB70) };
 
 			static void thunk(char* const buffer, const size_t a_size, const char* a_format, char a_fileName[], RE::FormID a_formID)
@@ -340,8 +352,9 @@ namespace eslhooks
 
 			static inline REL::Relocation<decltype(thunk)> func;
 
-			static void Install() {
-				REL::safe_fill(target.address() + 0x77, REL::NOP, 0x5); // Erase truncation of plugin index on formID
+			static void Install()
+			{
+				REL::safe_fill(target.address() + 0x77, REL::NOP, 0x5);  // Erase truncation of plugin index on formID
 				pstl::write_thunk_call<GetFactTintHook>(target.address() + 0x8A);
 				logger::info("GetFactTintHook hooked at {:x}", target.address() + 0x8A);
 				logger::info("GetFactTintHook hooked at offset {:x}", target.offset() + 0x8A);
@@ -436,9 +449,8 @@ namespace eslhooks
 			}
 		};
 
-
-
-		static void InstallHooks() {
+		static void InstallHooks()
+		{
 			GetFactTintHook::Install();
 			GetFactTintHook2::Install();
 			GetMeshFilenameHook::Install();
@@ -447,7 +459,8 @@ namespace eslhooks
 		}
 	}
 
-	static void InstallHooks() {
+	static void InstallHooks()
+	{
 		ESLFlagHook::Install();
 		adjustFormID::InstallHooks();
 		isesl::InstallHooks();

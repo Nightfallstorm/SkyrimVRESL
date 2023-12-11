@@ -1,10 +1,10 @@
 #include "DataHandler.h"
+#include "eslhooks.h"
 #include "hooks.h"
-#include "sksevrhooks.h"
 #include "saveloadhooks.h"
+#include "sksevrhooks.h"
 #include "startuphooks.h"
 #include "tesfilehooks.h"
-#include "eslhooks.h"
 
 void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 {
@@ -18,22 +18,20 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 					std::string(file->fileName),
 					file->recordFlags.underlying());
 			}
-			
+
 			logger::info("kDataLoaded: Printing loaded files");
 			for (auto file : handler->compiledFileCollection.files) {
 				logger::info("Regular file {} recordFlags: {:x} index {:x}",
 					std::string(file->fileName),
 					file->recordFlags.underlying(),
-					file->compileIndex
-				);
+					file->compileIndex);
 			}
 
 			for (auto file : handler->compiledFileCollection.smallFiles) {
-				logger::info("Small file {} recordFlags: {:x} index {:x}", 
-					std::string(file->fileName), 
+				logger::info("Small file {} recordFlags: {:x} index {:x}",
+					std::string(file->fileName),
 					file->recordFlags.underlying(),
-					file->smallFileCompileIndex
-				);
+					file->smallFileCompileIndex);
 			}
 
 			auto [formMap, lock] = RE::TESForm::GetAllForms();

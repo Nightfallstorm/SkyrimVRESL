@@ -2,7 +2,8 @@
 
 using namespace RE;
 
-DataHandler* DataHandler::GetSingleton() {
+DataHandler* DataHandler::GetSingleton()
+{
 	return reinterpret_cast<DataHandler*>(RE::TESDataHandler::GetSingleton());
 }
 
@@ -18,16 +19,17 @@ struct DataHandlerCTORHook
 
 	static inline REL::Relocation<decltype(thunk)> func;
 
-	static void Install() {
+	static void Install()
+	{
 		pstl::write_thunk_call<DataHandlerCTORHook>(target.address() + 0x3DB);
 		logger::info("DataHandlerCTORHook installed at {:x}", target.address() + 0x3DB);
 		logger::info("DataHandlerCTORHook installed at offset {:x}", target.offset() + 0x3DB);
 	}
 };
 
-void DataHandler::InstallHooks() {
+void DataHandler::InstallHooks()
+{
 #ifdef BACKWARDS_COMPATIBLE
 	DataHandlerCTORHook::Install();
 #endif
 }
-

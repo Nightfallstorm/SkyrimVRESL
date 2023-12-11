@@ -1,6 +1,6 @@
 #pragma once
-#include <detours/detours.h>
 #include "DataHandler.h"
+#include <detours/detours.h>
 
 namespace saveloadhooks
 {
@@ -93,7 +93,6 @@ namespace saveloadhooks
 			REL::Relocation<func_t> func{ REL::Offset(0x59EF60) };
 			return func(a_buffer);
 		}
-
 
 		// TODO: We skip the verification step for the sake of simplicity. We should add that verification and do it SE-style
 		static bool LoadMods(RE::BGSSaveLoadGame* a_saveloadManager, Win32FileType* a_unk2, std::uint64_t a_unk3)

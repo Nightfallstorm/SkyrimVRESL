@@ -49,7 +49,6 @@ namespace startuphooks
 			a_file->flags |= fileCompileIndex << 24;
 			a_file->compileIndex = fileCompileIndex;
 			a_file->smallFileCompileIndex = 0;
-
 		}
 		logger::debug("AddFile finished");
 	}
@@ -316,7 +315,8 @@ namespace startuphooks
 		}
 	};
 
-	namespace eslExtensionHooks {
+	namespace eslExtensionHooks
+	{
 		struct ParsePluginTXTHook
 		{
 			// Hook plugin parsing to include .esl along with .esm and .esp
@@ -344,7 +344,8 @@ namespace startuphooks
 			}
 		};
 
-		struct BuildFileListHook {
+		struct BuildFileListHook
+		{
 			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x17E540) };
 
 			struct TrampolineCall : Xbyak::CodeGenerator
@@ -352,7 +353,7 @@ namespace startuphooks
 				TrampolineCall(std::uintptr_t jmpAfterCall, std::uintptr_t func)
 				{
 					Xbyak::Label funcLabel;
-					lea(rcx, ptr[rbp - 0x5C]); // Move fileName into place
+					lea(rcx, ptr[rbp - 0x5C]);  // Move fileName into place
 					sub(rsp, 0x20);
 					call(ptr[rip + funcLabel]);
 					add(rsp, 0x20);
@@ -363,15 +364,17 @@ namespace startuphooks
 				}
 			};
 
-			static bool IsFilenameAPlugin(const char* a_fileName) {
+			static bool IsFilenameAPlugin(const char* a_fileName)
+			{
 				auto string = std::string(a_fileName);
 				std::transform(string.begin(), string.end(), string.begin(), ::tolower);
 				return string.ends_with(".esl") || string.ends_with(".esm") || string.ends_with(".esp");
 			}
 
-			static void Install() {
-				std::uintptr_t start = target.address() + 0xB0; // TODO
-				std::uintptr_t end = target.address() + 0x113;  // TODO
+			static void Install()
+			{
+				std::uintptr_t start = target.address() + 0xB0;  // TODO
+				std::uintptr_t end = target.address() + 0x113;   // TODO
 				REL::safe_fill(start, REL::NOP, end - start);
 
 				auto trampolineJmp = TrampolineCall(end, stl::unrestricted_cast<std::uintptr_t>(IsFilenameAPlugin));
@@ -386,7 +389,8 @@ namespace startuphooks
 			}
 		};
 
-		struct ParseINIHook {
+		struct ParseINIHook
+		{
 			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x5C18D0) };
 
 			static std::uint64_t thunk(char a_extension[], const char* a_esm)
@@ -413,7 +417,8 @@ namespace startuphooks
 		{
 			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x51F890) };
 
-			static bool thunk(char* a_extension, const char* a_esm) {
+			static bool thunk(char* a_extension, const char* a_esm)
+			{
 				logger::info("UnkSetCheckHook Checking {}", a_extension);
 				auto isESM = func(a_extension, a_esm) == 0;
 				auto isESL = func(a_extension, ".esl") == 0;
@@ -423,7 +428,8 @@ namespace startuphooks
 
 			static inline REL::Relocation<decltype(thunk)> func;
 
-			static void Install() {
+			static void Install()
+			{
 				pstl::write_thunk_call<UnkSetCheckHook>(target.address() + 0x1BA);
 				logger::info("UnkSetCheckHook hooked at {:x}", target.address() + 0x1BA);
 				logger::info("UnkSetCheckHook hooked at offset {:x}", target.offset() + 0x1BA);
@@ -453,7 +459,8 @@ namespace startuphooks
 			}
 		};
 
-		static inline void InstallHooks() {
+		static inline void InstallHooks()
+		{
 			//ParsePluginTXTHook::Install(); // Unused, patching on the off-chance it is
 			//BuildFileListHook::Install();
 			//ParseINIHook::Install();

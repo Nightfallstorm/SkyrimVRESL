@@ -87,9 +87,10 @@ namespace tesfilehooks
 		}
 	};
 
-	struct UnkCOCHook {
+	struct UnkCOCHook
+	{
 		static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x17C000) };
-		
+
 		static inline std::uint32_t fileIndexCount = 0;
 
 		struct TrampolineCOCCall : Xbyak::CodeGenerator
@@ -135,7 +136,7 @@ namespace tesfilehooks
 				jmp(rcx);
 				L(failLabel);
 				mov(rcx, fileIndexCount);
-				mov(dword [rcx], 0);
+				mov(dword[rcx], 0);
 				mov(rcx, jmpOnFail);
 				jmp(rcx);
 				L(funcLabel);
@@ -143,12 +144,14 @@ namespace tesfilehooks
 			}
 		};
 
-		static bool IndexCheck() {
+		static bool IndexCheck()
+		{
 			fileIndexCount++;
 			return fileIndexCount >= filesArray.size();
 		}
 
-		static RE::TESFile* OpenFileLoop() {
+		static RE::TESFile* OpenFileLoop()
+		{
 			// VR loops through and opens loadedMods until one returns true
 			// SE loops through `files` then `activeFile` and opens until one returns true
 			logger::debug("OpenFileLoop called with index {}", fileIndexCount);
@@ -159,7 +162,8 @@ namespace tesfilehooks
 			return nullptr;
 		}
 
-		static void SkipLoadedModsOptimizedLoopCheck() {
+		static void SkipLoadedModsOptimizedLoopCheck()
+		{
 			// The loop only does logic on `loadedMods` if a single file is "optimized"
 			// It doesn't seem like any plugins in vanilla or modded would have this flag, so we will
 			// NOP all the logic
@@ -170,7 +174,8 @@ namespace tesfilehooks
 			REL::safe_fill(start, REL::NOP, end - start);
 		}
 
-		static void InstallFileOpenLoop() {
+		static void InstallFileOpenLoop()
+		{
 			std::uintptr_t start = target.address() + 0x173;
 			std::uintptr_t end = target.address() + 0x1A8;
 			std::uintptr_t failJmp = target.address() + 0x439;
@@ -184,7 +189,8 @@ namespace tesfilehooks
 			trampoline.write_branch<5>(start, (std::uintptr_t)result);
 		}
 
-		static void InstallFailOpenFileLoop() {
+		static void InstallFailOpenFileLoop()
+		{
 			std::uintptr_t start = target.address() + 0x439;
 			std::uintptr_t end = target.address() + 0x44C;
 			std::uintptr_t failJmp = target.address() + 0x44C;
@@ -196,17 +202,19 @@ namespace tesfilehooks
 			SKSE::AllocTrampoline(trampolineJmp.getSize());
 			auto result = trampoline.allocate(trampolineJmp);
 			SKSE::AllocTrampoline(14);
-			trampoline.write_branch<5>(start, (std::uintptr_t) result);
+			trampoline.write_branch<5>(start, (std::uintptr_t)result);
 		}
 
-		static void Install() {
+		static void Install()
+		{
 			SkipLoadedModsOptimizedLoopCheck();
 			InstallFileOpenLoop();
 			InstallFailOpenFileLoop();
 		}
 	};
 
-	struct UnkCOCFileResetHook {
+	struct UnkCOCFileResetHook
+	{
 		static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x17F350) };
 
 		struct TrampolineCall : Xbyak::CodeGenerator
@@ -226,7 +234,8 @@ namespace tesfilehooks
 			}
 		};
 
-		static void UnkTESFile(RE::TESFile* a_file) {
+		static void UnkTESFile(RE::TESFile* a_file)
+		{
 			using func_t = decltype(&UnkTESFile);
 			REL::Relocation<func_t> func{ REL::Offset(0x18FBA0) };
 			return func(a_file);
@@ -234,7 +243,8 @@ namespace tesfilehooks
 
 		// VR loops over loadedmods and calls some resetting function, then clears loadedmods
 		// SE loops over regular/small files, calls resetting function then clears the arrays
-		static void ClearFilesLoop() {
+		static void ClearFilesLoop()
+		{
 			logger::debug("ClearFilesLoop called!");
 			auto handler = DataHandler::GetSingleton();
 			for (auto file : handler->compiledFileCollection.files) {
@@ -255,21 +265,24 @@ namespace tesfilehooks
 #endif
 		}
 
-		static void Install() {
+		static void Install()
+		{
 			std::uintptr_t start = target.address() + 0x70B;
 			std::uintptr_t end = target.address() + 0x757;
 			REL::safe_fill(start, REL::NOP, end - start);
-			auto trampolineJmp = TrampolineCall(end,stl::unrestricted_cast<std::uintptr_t>(ClearFilesLoop));
+			auto trampolineJmp = TrampolineCall(end, stl::unrestricted_cast<std::uintptr_t>(ClearFilesLoop));
 			REL::safe_write(start, trampolineJmp.getCode(), trampolineJmp.getSize());
 		}
 	};
 
-	struct UnkHook {
+	struct UnkHook
+	{
 		// TODO: Find name of this UnkHook
 		static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x1B9E60) };
 		static inline REL::Relocation<std::uintptr_t> target2{ REL::Offset(0x1B9C50) };
-		
-		static std::uint64_t thunk(RE::FormID a_formID) {
+
+		static std::uint64_t thunk(RE::FormID a_formID)
+		{
 			auto highestByte = a_formID >> 0x18;
 			logger::info("Calling Unk with {:x}", highestByte);
 			return func(highestByte);
@@ -277,7 +290,8 @@ namespace tesfilehooks
 
 		static inline REL::Relocation<decltype(thunk)> func;
 
-		static RE::TESFile* GetFileFromFormID(DataHandler* a_handler, RE::FormID a_formID) {
+		static RE::TESFile* GetFileFromFormID(DataHandler* a_handler, RE::FormID a_formID)
+		{
 			logger::info("GetFileFromFormID called on {:x}", a_formID);
 			auto espIndex = a_formID >> 0x18;
 			if (espIndex == 0xFE) {
@@ -302,22 +316,25 @@ namespace tesfilehooks
 			REL::safe_fill(start, REL::NOP, end - start);
 		}
 
-		static void InstallThunkUnk() {
+		static void InstallThunkUnk()
+		{
 			pstl::write_thunk_call<UnkHook>(target.address() + 0x5B);
 			pstl::write_thunk_call<UnkHook>(target2.address() + 0x50);
 		}
-		
-		static void InstallGetFileFromFormID() {
+
+		static void InstallGetFileFromFormID()
+		{
 			SKSE::AllocTrampoline(14);
 			SKSE::GetTrampoline().write_call<5>(target.address() + 0x71, GetFileFromFormID);
 			SKSE::AllocTrampoline(14);
 			SKSE::GetTrampoline().write_call<5>(target2.address() + 0x66, GetFileFromFormID);
 		}
 
-		static void Install() {
+		static void Install()
+		{
 			EraseBitShift();
 			InstallThunkUnk();
-			InstallGetFileFromFormID();			
+			InstallGetFileFromFormID();
 		}
 	};
 
