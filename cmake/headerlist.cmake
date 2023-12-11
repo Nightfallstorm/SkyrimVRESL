@@ -7,4 +7,5 @@ set(headers ${headers}
 	src/sksevrhooks.h
 	src/startuphooks.h
 	src/eslhooks.h
+	src/SaveLoadGame.h
 )
