@@ -20,11 +20,12 @@ public:
 	{
 		return reinterpret_cast<SaveLoadGame*>(RE::BGSSaveLoadGame::GetSingleton());
 	}
-
+	
+	static void InstallHooks();
 	// members
 	// ~~~~~~~~~~~~~~~~~ below member differs from VR~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	BSTArray<const TESFile*> regularPluginList;  // 000
-	BSTArray<const TESFile*> smallPluginList;    // 018
+	BSTArray<TESFile*> regularPluginList;  // 000
+	BSTArray<TESFile*> smallPluginList;    // 018
 
 	std::uint64_t fakeVRPadding[0x3A];
 	// ~~~~~~~~~~~~~~~~~ end VR difference ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
