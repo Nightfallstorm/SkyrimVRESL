@@ -7,23 +7,27 @@ namespace saveloadhooks
 {
 	static inline int SESaveVersion = 78;
 	static inline int VRSaveVersion = 77;
-	
-	struct SaveVersionHook {
-		static void InstallGetSaveVersionFuncHook() {
+
+	struct SaveVersionHook
+	{
+		static void InstallGetSaveVersionFuncHook()
+		{
 			REL::Relocation<std::uintptr_t> target{ REL::Offset(0x58F1C0) };
 			REL::safe_fill(target.address(), REL::NOP, 0x7);
-			byte newSaveVersion[5] = { 0xB8, 0x4E, 0x00, 0x00, 0x00 }; // mov eax, 78
+			byte newSaveVersion[5] = { 0xB8, 0x4E, 0x00, 0x00, 0x00 };  // mov eax, 78
 			REL::safe_write(target.address(), newSaveVersion, 0x5);
 		}
 
-		static void InstallSaveVersionGrab() {
+		static void InstallSaveVersionGrab()
+		{
 			REL::Relocation<std::uintptr_t> target{ REL::Offset(0x58F1D0) };
 			REL::safe_fill(target.address() + 0xBA, REL::NOP, 0x7);
-			byte newSaveVersion[5] = { 0xBB, 0x4E, 0x00, 0x00, 0x00 }; // mov rbx, 78
+			byte newSaveVersion[5] = { 0xBB, 0x4E, 0x00, 0x00, 0x00 };  // mov rbx, 78
 			REL::safe_write(target.address() + 0xBA, newSaveVersion, 0x5);
 		}
 
-		static void Install() {
+		static void Install()
+		{
 			InstallSaveVersionGrab();
 			InstallGetSaveVersionFuncHook();
 		}

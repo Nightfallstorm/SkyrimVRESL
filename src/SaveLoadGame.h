@@ -20,7 +20,7 @@ public:
 	{
 		return reinterpret_cast<SaveLoadGame*>(RE::BGSSaveLoadGame::GetSingleton());
 	}
-	
+
 	static void InstallHooks();
 	// members
 	// ~~~~~~~~~~~~~~~~~ below member differs from VR~~~~~~~~~~~~~~~~~~~~~~~~~~~~
