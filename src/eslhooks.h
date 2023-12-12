@@ -210,7 +210,6 @@ namespace eslhooks
 
 			static void AddCompileIndex(RE::FormID& a_formID, RE::TESFile* a_file)
 			{
-				// TODO: 0x7FF check may need modification for newest ESLs from 1.6.1130
 				if (IsFormIDReserved(a_formID) || !a_file) {
 					return;
 				}

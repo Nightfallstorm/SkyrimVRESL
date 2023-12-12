@@ -127,7 +127,6 @@ namespace saveloadhooks
 			return func(a_buffer);
 		}
 
-		// TODO: We skip the verification step for the sake of simplicity. We should add that verification and do it SE-style
 		static bool LoadMods(SaveLoadGame* a_saveloadGame, Win32FileType* a_unk2, std::uint64_t a_unk3)
 		{
 			logger::info("LoadMods called");
@@ -182,6 +181,5 @@ namespace saveloadhooks
 		SaveModshook::Install();
 		LoadModsHook::Install();
 		SaveVersionHook::Install();
-		// TODO: We need to hook BGSSaveLoadGame and let it know about ESLs as a concept, just like SE
 	}
 }
