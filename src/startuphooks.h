@@ -461,12 +461,11 @@ namespace startuphooks
 
 		static inline void InstallHooks()
 		{
-			//ParsePluginTXTHook::Install(); // Unused, patching on the off-chance it is
-			//BuildFileListHook::Install();
-			//ParseINIHook::Install();
-			//UnkSetCheckHook::Install();
-			//UnkHook::Install();
-			// TODO: Finish `.esl` support. With current hooks, file gets loaded and fails the check flag in some way that will need patching
+			ParsePluginTXTHook::Install(); // Unused, patching on the off-chance it is
+			BuildFileListHook::Install();
+			ParseINIHook::Install();
+			UnkSetCheckHook::Install();
+			UnkHook::Install();
 		}
 	}
 
