@@ -238,9 +238,9 @@ namespace SKSEVRHooks
 		}
 
 		auto& tramp = SKSE::GetTrampoline();
-		
+
 		for (const auto& patch : patches) {
-			logger::info("Trying to patch {} at {:x} with {:x}"sv, patch.name, sksevr_base + patch.offset, (std::uintptr_t) patch.function);
+			logger::info("Trying to patch {} at {:x} with {:x}"sv, patch.name, sksevr_base + patch.offset, (std::uintptr_t)patch.function);
 			std::uintptr_t target = (uintptr_t)(sksevr_base + patch.offset);
 			const std::uint8_t* read_addr = (std::uint8_t*)target;
 			if (std::memcmp((const void*)read_addr, patch.readBytes, sizeof(patch.readBytes))) {
