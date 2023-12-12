@@ -131,7 +131,7 @@ namespace saveloadhooks
 		static bool LoadMods(SaveLoadGame* a_saveloadGame, Win32FileType* a_unk2, std::uint64_t a_unk3)
 		{
 			logger::info("LoadMods called");
-			bool loadOrderValid = true; // Load order is valid for the current save
+			bool loadOrderValid = true;  // Load order is valid for the current save
 			RE::BGSLoadGameBuffer* buffer = RE::calloc<RE::BGSLoadGameBuffer>(1);
 			BGSLoadGameBufferCTOR(buffer);
 			BGSLoadGameBufferFile(buffer, a_unk2);
