@@ -166,18 +166,27 @@ namespace SKSEVRHooks
 
 	struct Core_LoadCallback_Switch : Xbyak::CodeGenerator
 	{
-		Core_LoadCallback_Switch(std::uintptr_t beginSwitch, std::uintptr_t endLoop)
+		// Allocating xbyak code on trampoline space is super far from SKSEVR space
+		// Use static list of bytes to jump to instead, preventing that "displacement out of range" error
+		static inline std::uint8_t xbyakBytes[100] = { 0x90 };
+
+		Core_LoadCallback_Switch(std::uintptr_t beginSwitch, std::uintptr_t endLoop, std::uintptr_t func = stl::unrestricted_cast<std::uintptr_t>(LoadPluginList))
 		{
+			Xbyak::Label funcLabel;
 			mov(rdx, dword[rsp + 0x8]);
 			cmp(rdx, 0x504C474E);  // 'PLGN'
 			jnz("KeepChecking");
 			mov(rcx, rbx);  // LoadPluginList(intfc);
-			call(&LoadPluginList);
+			sub(rsp, 0x20);
+			call(ptr[rip + funcLabel]);
+			add(rsp, 0x20);
 			mov(rcx, endLoop);  // break out
 			jmp(rcx);
 			L("KeepChecking");
 			mov(rcx, beginSwitch);  // keep switching
 			jmp(rcx);
+			L(funcLabel);
+			dq(func);
 		}
 		// Install our hook at the specified address
 
@@ -188,14 +197,16 @@ namespace SKSEVRHooks
 			std::uintptr_t endSwitch{ a_base + 0x28753 };
 
 			auto newCompareCheck = Core_LoadCallback_Switch(beginSwitch, endSwitch);
+			newCompareCheck.ready();
+			auto code = newCompareCheck.getCode();
+			for (int i = 0; i < newCompareCheck.getSize(); i++) {
+				xbyakBytes[i] = code[i];
+			}
 			int fillRange = beginSwitch - target;
 			REL::safe_fill(target, REL::NOP, fillRange);
 			auto& trampoline = SKSE::GetTrampoline();
-			SKSE::AllocTrampoline(newCompareCheck.getSize());
-			auto result = trampoline.allocate(newCompareCheck);
-			auto& trampoline2 = SKSE::GetTrampoline();
 			SKSE::AllocTrampoline(14);
-			trampoline2.write_branch<5>(target, (std::uintptr_t)result);
+			trampoline.write_branch<5>(target, (std::uintptr_t)xbyakBytes);
 
 			logger::info("Core_LoadCallback_Switch hooked at address SKSEVR::{:x}", target);
 			logger::info("Core_LoadCallback_Switch hooked at offset SKSEVR::{:x}", target);
@@ -212,9 +223,9 @@ namespace SKSEVRHooks
 	};
 
 	std::vector<SKSEVRPatches> patches{
-		{ "SaveModList", 0x283bd, { 0xe8, 0x8e, 0xfc, 0xff, 0xff }, &SavePluginsList },
-		{ "LoadModList", 0x2871b, { 0xe8, 0xc0, 0xf7, 0xff, 0xff }, &LoadModList },
-		{ "LoadLightModList", 0x28694, { 0xe8, 0x77, 0xfa, 0xff, 0xff }, &LoadLightModList },
+		{ "SaveModList", 0x283bd, { 0xe8, 0x8e, 0xfc, 0xff, 0xff }, SavePluginsList },
+		{ "LoadModList", 0x2871b, { 0xe8, 0xc0, 0xf7, 0xff, 0xff }, LoadModList },
+		{ "LoadLightModList", 0x28694, { 0xe8, 0x77, 0xfa, 0xff, 0xff }, LoadLightModList },
 	};
 	void Install(std::uint32_t a_skse_version)
 	{
@@ -225,20 +236,22 @@ namespace SKSEVRHooks
 			logger::info("Found unknown sksevr_1_4_15.dll version {} with base {:x}; not patching", a_skse_version, sksevr_base);
 			return;
 		}
-		// TODO: Determine why this section errors with `displacement is out of range`
+
 		auto& tramp = SKSE::GetTrampoline();
-		SKSE::AllocTrampoline(14 * patches.size());
+		
 		for (const auto& patch : patches) {
-			logger::info("Trying to patch {} at {:x}"sv, patch.name, sksevr_base + patch.offset);
-			const std::uint8_t* read_addr = (std::uint8_t*)(uintptr_t)(sksevr_base + patch.offset);
+			logger::info("Trying to patch {} at {:x} with {:x}"sv, patch.name, sksevr_base + patch.offset, (std::uintptr_t) patch.function);
+			std::uintptr_t target = (uintptr_t)(sksevr_base + patch.offset);
+			const std::uint8_t* read_addr = (std::uint8_t*)target;
 			if (std::memcmp((const void*)read_addr, patch.readBytes, sizeof(patch.readBytes))) {
 				logger::info("{} Read code is not as expected; not patching"sv, patch.name);
 				continue;
 			}
 			if (NOPpatch) {
-				REL::safe_fill((uintptr_t)read_addr, REL::NOP, sizeof(patch.readBytes));  // NOP
+				REL::safe_fill(target, REL::NOP, sizeof(patch.readBytes));  // NOP
 			} else {
-				tramp.write_call<5>((uintptr_t)read_addr, patch.function);
+				SKSE::AllocTrampoline(14);
+				tramp.write_call<5>(target, patch.function);
 			}
 			logger::info("SKSEVR {} patched"sv, patch.name);
 		}
