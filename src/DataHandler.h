@@ -9,6 +9,7 @@
 #include "RE/N/NiTArray.h"
 #include "RE/N/NiTList.h"
 #include "RE/T/TESForm.h"
+#include "SkyrimVRESLAPI.h"
 #include <detours/detours.h>
 
 using namespace RE;
@@ -69,3 +70,21 @@ static_assert(offsetof(DataHandler, masterSave) == 0x1570);
 static_assert(sizeof(DataHandler) == 0x15C0);
 static_assert(offsetof(DataHandler, compiledFileCollection) == 0x1590);
 #endif
+
+namespace SkyrimVRESLPluginAPI
+{
+	// Handles skse mod messages requesting to fetch API functions from SkyrimVRESL
+	void ModMessageHandler(SKSE::MessagingInterface::Message* message);
+
+	// This object provides access to SkyrimVRESL's mod support API version 1
+	struct SkyrimVRESLInterface001 : ISkyrimVRESLInterface001
+	{
+		virtual unsigned int GetBuildNumber();
+
+		/// @brief Get the SSE compatible TESFileCollection for SkyrimVR.
+		/// @return Pointer to CompiledFileCollection.
+		const RE::TESFileCollection* GetCompiledFileCollection();
+	};
+
+}  // namespace SkyrimVRESLPluginAPI
+extern SkyrimVRESLPluginAPI::SkyrimVRESLInterface001 g_interface001;

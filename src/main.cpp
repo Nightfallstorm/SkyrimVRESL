@@ -1,4 +1,5 @@
 #include "DataHandler.h"
+#include "SkyrimVRESLAPI.h"
 #include "eslhooks.h"
 #include "hooks.h"
 #include "saveloadhooks.h"
@@ -9,6 +10,16 @@
 void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 {
 	switch (a_message->type) {
+	case SKSE::MessagingInterface::kPostLoad:  // Called after all plugins have finished running
+											   // SKSEPlugin_Load.
+		// It is now safe to do multithreaded operations, or operations against other plugins.
+		if (SKSE::GetMessagingInterface()->RegisterListener(nullptr, SkyrimVRESLPluginAPI::ModMessageHandler))
+			logger::info("Successfully registered SKSE listener {} with buildnumber {}",
+				SkyrimVRESLPluginAPI::SkyrimVRESLPluginName, g_interface001.GetBuildNumber());
+		else
+			logger::info("Unable to register SKSE listener");
+		break;
+
 	case SKSE::MessagingInterface::kDataLoaded:
 		{
 			logger::info("kDataLoaded: Printing files");
