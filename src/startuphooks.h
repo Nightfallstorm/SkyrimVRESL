@@ -461,7 +461,7 @@ namespace startuphooks
 
 		static inline void InstallHooks()
 		{
-			ParsePluginTXTHook::Install(); // Unused, patching on the off-chance it is
+			ParsePluginTXTHook::Install();  // Unused, patching on the off-chance it is
 			BuildFileListHook::Install();
 			ParseINIHook::Install();
 			UnkSetCheckHook::Install();
