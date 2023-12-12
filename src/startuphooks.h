@@ -373,8 +373,8 @@ namespace startuphooks
 
 			static void Install()
 			{
-				std::uintptr_t start = target.address() + 0xB0;  // TODO
-				std::uintptr_t end = target.address() + 0x113;   // TODO
+				std::uintptr_t start = target.address() + 0xB0;
+				std::uintptr_t end = target.address() + 0x113;
 				REL::safe_fill(start, REL::NOP, end - start);
 
 				auto trampolineJmp = TrampolineCall(end, stl::unrestricted_cast<std::uintptr_t>(IsFilenameAPlugin));
