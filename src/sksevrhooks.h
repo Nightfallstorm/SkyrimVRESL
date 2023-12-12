@@ -125,7 +125,6 @@ namespace SKSEVRHooks
 		}
 	}
 
-
 	//This is new for skse64 and should be triggered on 'PLGN':
 	//Attempt to inject at SKSEVR::FUN_180028550 + 0x30 before the old case statement.
 	void LoadPluginList(SKSE::SerializationInterface* intfc)
@@ -165,7 +164,6 @@ namespace SKSEVRHooks
 		}
 	}
 
-
 	struct Core_LoadCallback_Switch : Xbyak::CodeGenerator
 	{
 		Core_LoadCallback_Switch(std::uintptr_t beginSwitch, std::uintptr_t endLoop)
@@ -186,7 +184,7 @@ namespace SKSEVRHooks
 		static inline void Install(std::uintptr_t a_base)
 		{
 			std::uintptr_t target{ a_base + 0x28573 };
-			std::uintptr_t beginSwitch{ a_base+ 0x28584 };
+			std::uintptr_t beginSwitch{ a_base + 0x28584 };
 			std::uintptr_t endSwitch{ a_base + 0x28753 };
 
 			auto newCompareCheck = Core_LoadCallback_Switch(beginSwitch, endSwitch);
@@ -242,9 +240,9 @@ namespace SKSEVRHooks
 			} else {
 				tramp.write_call<5>((uintptr_t)read_addr, patch.function);
 			}
-			logger::info("SKSEVR {} patched"sv, patch.name);	
+			logger::info("SKSEVR {} patched"sv, patch.name);
 		}
 		// TODO: Determine why this CTDs
-		Core_LoadCallback_Switch::Install(sksevr_base);			
+		Core_LoadCallback_Switch::Install(sksevr_base);
 	}
 }
