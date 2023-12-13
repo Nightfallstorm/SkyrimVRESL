@@ -86,7 +86,7 @@ namespace saveloadhooks
 
 			saveUnk(buffer, a_unk2);
 			BGSSaveGameBufferDTOR(buffer);
-			logger::info("SaveModNames finished");
+			logger::info("SaveModNames finished: regular {} light {}", fileSize, smallFileSize);
 		}
 
 		static void Install()
@@ -144,6 +144,7 @@ namespace saveloadhooks
 				BGSLoadGameBufferReadString(buffer, fileName);
 				auto file = const_cast<RE::TESFile*>(RE::TESDataHandler::GetSingleton()->LookupModByName(fileName));
 				if (file && file->compileIndex != 0xFF) {
+					logger::debug("Loading file {}", std::string(file->fileName));
 					a_saveloadGame->regularPluginList.push_back(file);
 				} else {
 					loadOrderValid = false;
@@ -151,12 +152,13 @@ namespace saveloadhooks
 			}
 
 			if (buffer->GetVersion() >= SESaveVersion) {
-				buffer->LoadDataEndian(&regularFileCount, 2u, 0);
+				buffer->LoadDataEndian(&smallFileCount, 2u, 0);
 				for (std::uint32_t i = 0; i < smallFileCount; i++) {
 					BGSLoadGameBufferReadString(buffer, fileName);
 					auto file = const_cast<RE::TESFile*>(RE::TESDataHandler::GetSingleton()->LookupModByName(fileName));
 					if (file && file->compileIndex != 0xFF) {
 						a_saveloadGame->smallPluginList.push_back(file);
+						logger::debug("Loading small file {}", std::string(file->fileName));
 					} else {
 						loadOrderValid = false;
 					}
@@ -164,7 +166,7 @@ namespace saveloadhooks
 			}
 
 			BGSLoadGameBufferDTOR(buffer);
-			logger::info("LoadMods finished");
+			logger::info("LoadMods finished: regular {} light {}", regularFileCount, smallFileCount);
 			return loadOrderValid;
 		}
 
