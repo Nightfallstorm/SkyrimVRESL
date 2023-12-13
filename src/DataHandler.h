@@ -88,3 +88,7 @@ namespace SkyrimVRESLPluginAPI
 
 }  // namespace SkyrimVRESLPluginAPI
 extern SkyrimVRESLPluginAPI::SkyrimVRESLInterface001 g_interface001;
+
+// Function that tests GetCompiledFileCollectionExtern() and prints to log.
+// This is also an example of how to use GetHandle and GetProc
+void TestGetCompiledFileCollectionExtern();

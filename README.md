@@ -31,6 +31,8 @@ Adds ESL support to Skyrim
 ```
 git clone https://github.com/Nightfallstorm/SkyrimVRESL.git
 cd skyrimvresl
+# pull submodules
+git submodule update --init --recursive
 ```
 
 ### VR

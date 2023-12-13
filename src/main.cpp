@@ -53,6 +53,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 				}
 			}
 			lock.get().UnlockForRead();
+			TestGetCompiledFileCollectionExtern();			
 			// TODO: Runtime hooks here?
 		}
 	default:
@@ -126,4 +127,14 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	SKSEVRHooks::Install(a_skse->SKSEVersion());
 	logger::info("finish hooks");
 	return true;
+}
+
+/// @brief Get the SSE compatible TESFileCollection for SkyrimVR using GetProcAddress. 
+/// This should be called after kDataLoaded to ensure it's been populated.
+/// This is not intended to be a stable API for other SKSE plugins. Use SkyrimVRESLAPI instead.
+/// @return Pointer to TESFileCollection CompiledFileCollection.
+extern "C" DLLEXPORT const RE::TESFileCollection* APIENTRY GetCompiledFileCollectionExtern()
+{
+	const auto& dh = DataHandler::GetSingleton();
+	return &(dh->compiledFileCollection);
 }
