@@ -20,7 +20,6 @@ void Settings::Load()
 	ini.SaveFile(path);
 }
 
-
 void Settings::SettingValues::Load(CSimpleIniA& a_ini)
 {
 	const char* section = "Settings";
@@ -28,6 +27,3 @@ void Settings::SettingValues::Load(CSimpleIniA& a_ini)
 	detail::get_value(a_ini, logLevel, section, "iLogLevel", ";Log level of messages to buffer for printing: trace = 0, debug = 1, info = 2, warn = 3, err = 4, critical = 5, off = 6.");
 	detail::get_value(a_ini, logLevel, section, "iFlushLevel", ";Log level to force messages to print from buffer.");
 }
-
-
-
