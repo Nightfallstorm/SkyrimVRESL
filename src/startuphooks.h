@@ -317,19 +317,29 @@ namespace startuphooks
 
 	namespace eslExtensionHooks
 	{
+		// For spots where SkyrimVR checks against .esm extension, we also now check against .esl extension
+		static bool EslExtensionCheck(char* a_extension, char* a_esm)
+		{
+			logger::info("EslExtensionCheck Checking {}", a_extension);
+			auto isESM = stricmp(a_extension, a_esm) == 0;
+			auto isESL = stricmp(a_extension, ".esl") == 0;
+			auto result = !(isESM || isESL);
+			logger::info("EslExtensionCheck Does extension contains ESM or ESL: {}", !result);
+			return result;
+		}
+
 		struct ParsePluginTXTHook
 		{
 			// Hook plugin parsing to include .esl along with .esm and .esp
 
 			static const char* thunk(const char* a_fileName, const char* a_esmString)
 			{
-				throw std::invalid_argument("TEST");
-				//auto string = std::strstr(a_fileName, a_esmString);
-				//if (!string) {
-				//	string = std::strstr(a_fileName, ".esl");
-				//}
-				//logger::info("{} returns string {}", a_fileName, string);
-				//return string;
+				auto string = std::strstr(a_fileName, a_esmString);
+				if (!string) {
+					string = std::strstr(a_fileName, ".esl");
+				}
+				logger::info("{} returns string {}", a_fileName, string);
+				return string;
 			}
 
 			static inline REL::Relocation<decltype(thunk)> func;
@@ -341,6 +351,36 @@ namespace startuphooks
 				REL::safe_fill(target.address(), REL::NOP, 0x100);
 				logger::info("Hooked PluginParsing at {:x}", target.address());
 				logger::info("Hooked PluginParsing at offset {:x}", target.offset());
+			}
+		};
+
+		struct PrepareBSAHook
+		{
+			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x184360) };
+
+			static void Install()
+			{
+				auto& trampoline = SKSE::GetTrampoline();
+				SKSE::AllocTrampoline(14);
+
+				trampoline.write_call<6>(target.address() + 0x8F, EslExtensionCheck);
+				logger::info("PrepareBSAHook hooked at {:x}", target.address() + 0x8F);
+				logger::info("PrepareBSAHook hooked at offset {:x}", target.offset() + 0x8F);
+			}
+		};
+
+		struct UnkUIModHook
+		{
+			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x52D230) };
+
+			static void Install()
+			{
+				auto& trampoline = SKSE::GetTrampoline();
+				SKSE::AllocTrampoline(14);
+
+				trampoline.write_call<6>(target.address() + 0x74, EslExtensionCheck);
+				logger::info("UnkUIModHook hooked at {:x}", target.address() + 0x74);
+				logger::info("UnkUIModHook hooked at offset {:x}", target.offset() + 0x74);
 			}
 		};
 
@@ -417,20 +457,12 @@ namespace startuphooks
 		{
 			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x51F890) };
 
-			static bool thunk(char* a_extension, const char* a_esm)
-			{
-				logger::info("UnkSetCheckHook Checking {}", a_extension);
-				auto isESM = func(a_extension, a_esm) == 0;
-				auto isESL = func(a_extension, ".esl") == 0;
-				logger::info("UnkSetCheckHook Result: {}", !(isESM || isESL));
-				return !(isESM || isESL);
-			}
-
-			static inline REL::Relocation<decltype(thunk)> func;
-
 			static void Install()
 			{
-				pstl::write_thunk_call<UnkSetCheckHook>(target.address() + 0x1BA);
+				auto& trampoline = SKSE::GetTrampoline();
+				SKSE::AllocTrampoline(14);
+
+				trampoline.write_call<6>(target.address() + 0x1BA, EslExtensionCheck);
 				logger::info("UnkSetCheckHook hooked at {:x}", target.address() + 0x1BA);
 				logger::info("UnkSetCheckHook hooked at offset {:x}", target.offset() + 0x1BA);
 			}
@@ -459,12 +491,21 @@ namespace startuphooks
 			}
 		};
 
+		struct UnkHook2
+		{
+			static inline REL::Relocation<std::uintptr_t> target{ REL::Relocation(0x92BF0) };
+
+			static void thunk(std::uint64_t)
+		};
+
 		static inline void InstallHooks()
 		{
 			ParsePluginTXTHook::Install();  // Unused, patching on the off-chance it is
 			BuildFileListHook::Install();
 			ParseINIHook::Install();
+			PrepareBSAHook::Install();
 			UnkSetCheckHook::Install();
+			UnkUIModHook::Install();
 			UnkHook::Install();
 		}
 	}
