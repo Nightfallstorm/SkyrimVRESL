@@ -306,7 +306,7 @@ namespace eslhooks
 			static void AdjustCurrentFormID(RE::TESFile* a_file)
 			{
 				auto master = GetMaster(a_file);
-				
+
 				if (!IsFormIDReserved((a_file->currentform.formID))) {
 					AdjustFormIDFileIndex(master, a_file->currentform.formID);
 				}
@@ -350,7 +350,8 @@ namespace eslhooks
 
 			static inline REL::Relocation<decltype(thunk)> func;
 
-			static void Install() {
+			static void Install()
+			{
 				REL::Relocation<std::uintptr_t> target{ REL::Offset(0x18AEB0 + 0x44E) };
 				pstl::write_thunk_call<BackwardsESLHeaderSupportHook>(target.address());
 			}
