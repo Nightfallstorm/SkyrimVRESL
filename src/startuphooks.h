@@ -491,13 +491,6 @@ namespace startuphooks
 			}
 		};
 
-		struct UnkHook2
-		{
-			static inline REL::Relocation<std::uintptr_t> target{ REL::Relocation(0x92BF0) };
-
-			static void thunk(std::uint64_t)
-		};
-
 		static inline void InstallHooks()
 		{
 			ParsePluginTXTHook::Install();  // Unused, patching on the off-chance it is
