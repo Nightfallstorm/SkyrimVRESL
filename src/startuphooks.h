@@ -320,11 +320,11 @@ namespace startuphooks
 		// For spots where SkyrimVR checks against .esm extension, we also now check against .esl extension
 		static bool EslExtensionCheck(char* a_extension, char* a_esm)
 		{
-			logger::info("EslExtensionCheck Checking {}", a_extension);
+			logger::debug("EslExtensionCheck Checking {}", a_extension);
 			auto isESM = stricmp(a_extension, a_esm) == 0;
 			auto isESL = stricmp(a_extension, ".esl") == 0;
 			auto result = !(isESM || isESL);
-			logger::info("EslExtensionCheck Does extension contains ESM or ESL: {}", !result);
+			logger::debug("EslExtensionCheck Is extension ESM or ESL: {}", !result);
 			return result;
 		}
 

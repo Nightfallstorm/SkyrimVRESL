@@ -9,4 +9,6 @@ set(headers ${headers}
 	src/startuphooks.h
 	src/eslhooks.h
 	src/SaveLoadGame.h
+	src/Settings.h
+	src/Util.h
 )

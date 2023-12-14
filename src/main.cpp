@@ -1,4 +1,5 @@
 #include "DataHandler.h"
+#include "Settings.h"
 #include "SkyrimVRESLAPI.h"
 #include "eslhooks.h"
 #include "hooks.h"
@@ -22,7 +23,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 
 	case SKSE::MessagingInterface::kDataLoaded:
 		{
-			logger::info("kDataLoaded: Printing files");
+			logger::debug("kDataLoaded: Printing files");
 			auto handler = DataHandler::GetSingleton();
 			for (auto file : handler->files) {
 				logger::info("file {} recordFlags: {:x}",
@@ -30,16 +31,16 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 					file->recordFlags.underlying());
 			}
 
-			logger::info("kDataLoaded: Printing loaded files");
+			logger::debug("kDataLoaded: Printing loaded files");
 			for (auto file : handler->compiledFileCollection.files) {
-				logger::info("Regular file {} recordFlags: {:x} index {:x}",
+				logger::debug("Regular file {} recordFlags: {:x} index {:x}",
 					std::string(file->fileName),
 					file->recordFlags.underlying(),
 					file->compileIndex);
 			}
 
 			for (auto file : handler->compiledFileCollection.smallFiles) {
-				logger::info("Small file {} recordFlags: {:x} index {:x}",
+				logger::debug("Small file {} recordFlags: {:x} index {:x}",
 					std::string(file->fileName),
 					file->recordFlags.underlying(),
 					file->smallFileCompileIndex);
@@ -53,7 +54,6 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 				}
 			}
 			lock.get().UnlockForRead();
-			// TODO: Runtime hooks here?
 		}
 	default:
 		break;
@@ -94,13 +94,9 @@ void InitializeLog()
 
 	auto log = std::make_shared<spdlog::logger>("global log"s, std::move(sink));
 
-#ifdef _DEBUG
-	log->set_level(spdlog::level::debug);
-	log->flush_on(spdlog::level::debug);
-#else
-	log->set_level(spdlog::level::info);
-	log->flush_on(spdlog::level::info);
-#endif
+	auto settings = Settings::GetSingleton();
+	log->set_level(settings->settings.logLevel);
+	log->flush_on(settings->settings.flushLevel);
 
 	spdlog::set_default_logger(std::move(log));
 	spdlog::set_pattern("[%H:%M:%S:%e] %v"s);
@@ -110,6 +106,11 @@ void InitializeLog()
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
+	try {
+		Settings::GetSingleton()->Load();
+	} catch (...) {
+		logger::error("Exception caught when loading settings! Default settings will be used");
+	}
 	InitializeLog();
 	logger::info("loaded plugin");
 
