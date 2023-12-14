@@ -39,7 +39,7 @@ namespace SKSEVRHooks
 					saveSuccessful &= intfc->WriteRecordData(&file->smallFileCompileIndex, sizeof(file->smallFileCompileIndex));
 				}
 
-				auto nameLen = strlen(file->fileName);
+				std::uint16_t nameLen = strlen(file->fileName);
 				saveSuccessful &= intfc->WriteRecordData(&nameLen, sizeof(nameLen));
 				saveSuccessful &= intfc->WriteRecordData(file->fileName, nameLen);
 				if (file->compileIndex != 0xFE) {
@@ -169,8 +169,8 @@ namespace SKSEVRHooks
 		Core_LoadCallback_Switch(std::uintptr_t beginSwitch, std::uintptr_t endLoop, std::uintptr_t func = stl::unrestricted_cast<std::uintptr_t>(LoadPluginList))
 		{
 			Xbyak::Label funcLabel;
-			mov(rdx, dword[rsp + 0x8]);
-			cmp(rdx, 0x504C474E);  // 'PLGN'
+			mov(rdx, dword[rsp + 0x30]);
+			cmp(rdx, 'PLGN');  // 'PLGN'
 			jnz("KeepChecking");
 			mov(rcx, rbx);  // LoadPluginList(intfc);
 			sub(rsp, 0x20);
