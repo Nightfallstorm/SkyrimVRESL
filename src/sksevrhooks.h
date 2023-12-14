@@ -166,10 +166,6 @@ namespace SKSEVRHooks
 
 	struct Core_LoadCallback_Switch : Xbyak::CodeGenerator
 	{
-		// Allocating xbyak code on trampoline space is super far from SKSEVR space
-		// Use static list of bytes to jump to instead, preventing that "displacement out of range" error
-		static inline std::uint8_t xbyakBytes[100] = { 0x90 };
-
 		Core_LoadCallback_Switch(std::uintptr_t beginSwitch, std::uintptr_t endLoop, std::uintptr_t func = stl::unrestricted_cast<std::uintptr_t>(LoadPluginList))
 		{
 			Xbyak::Label funcLabel;
@@ -198,15 +194,13 @@ namespace SKSEVRHooks
 
 			auto newCompareCheck = Core_LoadCallback_Switch(beginSwitch, endSwitch);
 			newCompareCheck.ready();
-			auto code = newCompareCheck.getCode();
-			for (int i = 0; i < newCompareCheck.getSize(); i++) {
-				xbyakBytes[i] = code[i];
-			}
 			int fillRange = beginSwitch - target;
 			REL::safe_fill(target, REL::NOP, fillRange);
 			auto& trampoline = SKSE::GetTrampoline();
-			SKSE::AllocTrampoline(14);
-			trampoline.write_branch<5>(target, (std::uintptr_t)xbyakBytes);
+			trampoline.create(newCompareCheck.getSize(), (void*)target);
+			auto result = trampoline.allocate(newCompareCheck);
+			logger::info("Core_LoadCallback_switch hookin {:x} to jmp to {:x} with base {:x}", target, (std::uintptr_t)result, a_base);
+			trampoline.write_branch<5>(target, result);
 
 			logger::info("Core_LoadCallback_Switch hooked at address SKSEVR::{:x}", target);
 			logger::info("Core_LoadCallback_Switch hooked at offset SKSEVR::{:x}", target);
