@@ -101,8 +101,8 @@ namespace Util
 			inline std::string join(const std::vector<std::string>& a_vec, const char* a_delimiter)
 			{
 				std::ostringstream os;
-				auto               begin = a_vec.begin();
-				auto               end = a_vec.end();
+				auto begin = a_vec.begin();
+				auto end = a_vec.end();
 
 				if (begin != end) {
 					std::copy(begin, std::prev(end), std::ostream_iterator<std::string>(os, a_delimiter));
@@ -180,9 +180,9 @@ namespace Util
 			inline std::vector<std::string> split(const std::string& a_str, const std::string& a_deliminator)
 			{
 				std::vector<std::string> list;
-				std::string              strCopy = a_str;
-				size_t                   pos = 0;
-				std::string              token;
+				std::string strCopy = a_str;
+				size_t pos = 0;
+				std::string token;
 				while ((pos = strCopy.find(a_deliminator)) != std::string::npos) {
 					token = strCopy.substr(0, pos);
 					list.push_back(token);
