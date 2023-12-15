@@ -138,14 +138,15 @@ namespace eslhooks
 
 			static RE::TESForm* GetFormFromFile(RE::TESFile* a_file, RE::FormID a_rawID)
 			{
+				logger::debug("GetFormFromFile called for {} ,{:x}", a_file->fileName, a_rawID);
 				auto formID = a_rawID;
 				AdjustFormIDFileIndex(a_file, formID);
+				logger::debug("GetFormFromFile formID looking up {:x}", formID);
 				return RE::TESForm::LookupByID(formID);
 			}
 
 			static void Install()
 			{
-				// TODO: Don't conflict with MergeMapper for papyrus_GetFormFromID
 				std::uintptr_t start = target.address() + 0x50;
 				std::uintptr_t end = target.address() + 0x6B;
 				REL::safe_fill(start, REL::NOP, end - start);

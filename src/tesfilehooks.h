@@ -277,7 +277,6 @@ namespace tesfilehooks
 
 	struct UnkHook
 	{
-		// TODO: Find name of this UnkHook
 		static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x1B9E60) };
 		static inline REL::Relocation<std::uintptr_t> target2{ REL::Offset(0x1B9C50) };
 

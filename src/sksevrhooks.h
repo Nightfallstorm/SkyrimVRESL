@@ -249,7 +249,6 @@ namespace SKSEVRHooks
 			}
 			logger::info("SKSEVR {} patched"sv, patch.name);
 		}
-		// TODO: Determine why this CTDs
 		Core_LoadCallback_Switch::Install(sksevr_base);
 	}
 }
