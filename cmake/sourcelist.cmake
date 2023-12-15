@@ -4,4 +4,5 @@ set(sources ${sources}
 	src/SaveLoadGame.cpp
 	src/main.cpp
 	src/PCH.cpp
+	src/Settings.cpp
 )

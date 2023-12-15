@@ -292,7 +292,7 @@ namespace tesfilehooks
 
 		static RE::TESFile* GetFileFromFormID(DataHandler* a_handler, RE::FormID a_formID)
 		{
-			logger::info("GetFileFromFormID called on {:x}", a_formID);
+			logger::debug("GetFileFromFormID called on {:x}", a_formID);
 			auto espIndex = a_formID >> 0x18;
 			if (espIndex == 0xFE) {
 				auto eslIndex = (a_formID >> 0x12) & 0xFFF;
