@@ -28,7 +28,8 @@ namespace SkyrimVRESLPluginAPI
 		virtual unsigned int GetBuildNumber() = 0;
 
 		/// @brief Get the SSE compatible TESFileCollection for SkyrimVR.
-		/// @return Pointer to CompiledFileCollection.
+		/// This should be called after kDataLoaded to ensure it's been populated.
+		/// @return Pointer to TESFileCollection CompiledFileCollection.
 		const virtual RE::TESFileCollection* GetCompiledFileCollection() = 0;
 	};
 

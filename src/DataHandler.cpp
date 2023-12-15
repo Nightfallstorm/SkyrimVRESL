@@ -5,7 +5,7 @@ using namespace RE;
 
 DataHandler* DataHandler::GetSingleton()
 {
-	return reinterpret_cast<DataHandler*>(RE::TESDataHandler::GetSingleton());
+	return reinterpret_cast<DataHandler*>(RE::TESDataHandler::GetSingleton(false));
 }
 
 struct DataHandlerCTORHook
@@ -68,4 +68,17 @@ const RE::TESFileCollection* SkyrimVRESLPluginAPI::SkyrimVRESLInterface001::GetC
 {
 	const auto& dh = DataHandler::GetSingleton();
 	return &(dh->compiledFileCollection);
+}
+
+void TestGetCompiledFileCollectionExtern()
+{
+	static const RE::TESFileCollection* VRcompiledFileCollection = nullptr;
+	const auto VRhandle = GetModuleHandleA("skyrimvresl");
+	if (!VRcompiledFileCollection) {
+		const auto GetCompiledFileCollection = reinterpret_cast<const RE::TESFileCollection* (*)()>(GetProcAddress(VRhandle, "GetCompiledFileCollectionExtern"));
+		if (GetCompiledFileCollection != nullptr) {
+			VRcompiledFileCollection = GetCompiledFileCollection();
+		}
+		logger::info("Found VRcompiledFileCollection 0x{:x}", reinterpret_cast<std::uintptr_t>(VRcompiledFileCollection));
+	}
 }

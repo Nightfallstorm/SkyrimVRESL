@@ -1,9 +1,9 @@
 {
-  "name": "poisoner",
-  "version-string": "1.0.0",
-  "description": "Simple SKSE mod to add/get poison from weapons. For use with Jayserpa's Smart NPC Potions",
-  "homepage": "https://github.com/JonathanTaylor555/Poisoner",
-  "license": "MIT",
+  "name": "skyrimvresl",
+  "version-string": "0.0.1",
+  "description": "Adds ESL support to SkyrimVR.",
+  "homepage": "https://github.com/Nightfallstorm/SkyrimVRESL",
+  "license": "GPL-3.0",
   "dependencies": [
     "boost-stl-interfaces",
     "robin-hood-hashing",
