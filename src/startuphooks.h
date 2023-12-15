@@ -321,8 +321,8 @@ namespace startuphooks
 		static bool EslExtensionCheck(char* a_extension, char* a_esm)
 		{
 			logger::debug("EslExtensionCheck Checking {}", a_extension);
-			auto isESM = stricmp(a_extension, a_esm) == 0;
-			auto isESL = stricmp(a_extension, ".esl") == 0;
+			auto isESM = _stricmp(a_extension, a_esm) == 0;
+			auto isESL = _stricmp(a_extension, ".esl") == 0;
 			auto result = !(isESM || isESL);
 			logger::debug("EslExtensionCheck Is extension ESM or ESL: {}", !result);
 			return result;
