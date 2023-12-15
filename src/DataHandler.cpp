@@ -61,7 +61,7 @@ void SkyrimVRESLPluginAPI::ModMessageHandler(SKSE::MessagingInterface::Message* 
 // Fetches the SkyrimVRESL version number
 unsigned int SkyrimVRESLPluginAPI::SkyrimVRESLInterface001::GetBuildNumber()
 {
-	return 1;  // TODO: Figure out how to get packed version number
+	return (Version::MAJOR >> 8) + (Version::MINOR >> 4) + Version::PATCH;
 }
 
 const RE::TESFileCollection* SkyrimVRESLPluginAPI::SkyrimVRESLInterface001::GetCompiledFileCollection()
