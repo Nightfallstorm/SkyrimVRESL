@@ -118,7 +118,8 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	SKSE::Init(a_skse);
 	auto messaging = SKSE::GetMessagingInterface();
 	messaging->RegisterListener(MessageHandler);
-
+	if (_getmaxstdio() < 2048)
+		logger::warn("Required Engine Fixes VR MaxStdio patch not detected. SkyrimVR will hang if you have more than {} plugins installed in /Data--even if inactive!", _getmaxstdio());
 	tesfilehooks::InstallHooks();
 	startuphooks::InstallHooks();
 	saveloadhooks::InstallHooks();
