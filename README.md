@@ -50,6 +50,8 @@ cmake --build buildvr --config Release
 [GPL-3.0-or-later](LICENSE) WITH [Modding Exception AND GPL-3.0 Linking Exception (with Corresponding Source)](EXCEPTIONS.md).  
 Specifically, the Modded Code is Skyrim (and its variants) and Modding Libraries include [SKSE](https://skse.silverlock.org/) and Commonlib (and variants).
 
+Use of the [SkyrimVRESLAPI.h](cmake/ports/SkyrimVRESL/SkyrimVRESLAPI.h) and [SkyrimVRESLAPI.cpp](cmake/ports/SkyrimVRESL/SkyrimVRESLAPI.cpp) is under [MIT](https://opensource.org/license/mit/). In other words, using the SKSE messaging interface to call this dll's published API will not require application of the GPL-3.0 terms to the calling dll. In addition, using SKSEVR or CommonLib with SkyrimVRESL support will not require application of the GPL-3.0 terms.
+
 ## Credits
 
 Skyrim modding is built on the community. While there are too many to count, we couldn't have done this without foundational work since the original Skyrim release.
