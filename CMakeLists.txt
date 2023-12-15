@@ -267,6 +267,7 @@ endif()
 # ---- Post build ----
 if(COPY_BUILD)
 	if(DEFINED SkyrimPath)
+		string(REGEX REPLACE "[/\\][Dd][Aa][Tt][Aa][/\\]?$" "" SkyrimPath "${SkyrimPath}") # remove " /data " if exists; cmake regex doesn't have /i
 		add_custom_command(
 			TARGET ${PROJECT_NAME}
 			POST_BUILD

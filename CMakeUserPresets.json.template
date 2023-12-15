@@ -1,0 +1,15 @@
+{
+	"version": 3,
+	"configurePresets": [
+		{
+			"name": "vs2022-windows-vcpkg-vr",
+			"cacheVariables": {
+				"COPY_BUILD": true
+			},
+			"environment": {
+				"SkyrimPath": "E:\\SteamLibrary\\steamapps\\common\\SkyrimVR/Data;E:\\SteamLibrary\\steamapps\\common\\Skyrim Special Edition/Data",
+			},
+			"inherits": "ALL"
+		}
+	]
+}

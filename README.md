@@ -39,7 +39,9 @@ git submodule update --init --recursive
 ### VR
 
 ```
+# run preset
 cmake --preset vs2022-windows-vcpkg-vr
+# see CMakeUserPresets.json.template to customize presets
 cmake --build buildvr --config Release
 ```
 
