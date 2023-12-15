@@ -64,6 +64,8 @@ Skyrim modding is built on the community. While there are too many to count, we 
 
 ### General
 
+While we did not break legacy behavior of SkyrimVR data handlers, if your DLL requires accessing the list of plugins or formids, you will likely need to update as users start adding ESL mods. 
+
 SkyrimVR ESL support can be added to your SKSEVR dlls in three ways:
 
 1. **RECOMMENDED** [Automatically](#automatically) using ESL-enabled [CommonlibVR](https://github.com/alandtse/commonlibvr) or [CommonLibNG](https://github.com/alandtse/CommonLibVR/tree/ng). Functions have been modified to automatically detect and use.
