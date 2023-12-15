@@ -15,7 +15,6 @@ namespace eslhooks
 		using FileFlag = RE::TESFile::RecordFlag;
 		struct TrampolineCall : Xbyak::CodeGenerator
 		{
-			// Call AddFile method, then jump back to rest of code
 			TrampolineCall(std::uintptr_t jmpAfterCall, std::uintptr_t func)
 			{
 				Xbyak::Label funcLabel;

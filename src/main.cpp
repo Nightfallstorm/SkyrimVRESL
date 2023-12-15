@@ -26,9 +26,10 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 			logger::debug("kDataLoaded: Printing files");
 			auto handler = DataHandler::GetSingleton();
 			for (auto file : handler->files) {
-				logger::info("file {} recordFlags: {:x}",
+				logger::debug("file {} recordFlags: {:x} index {:x}",
 					std::string(file->fileName),
-					file->recordFlags.underlying());
+					file->recordFlags.underlying(),
+					file->compileIndex);
 			}
 
 			logger::debug("kDataLoaded: Printing loaded files");
