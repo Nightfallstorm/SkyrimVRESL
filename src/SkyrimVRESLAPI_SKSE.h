@@ -1,6 +1,6 @@
 #pragma once
-#include "skse64/PluginAPI.h"
 #include "skse64/GameReferences.h"
+#include "skse64/PluginAPI.h"
 #include <skse64/GameData.h>
 // Interface code based on https://github.com/adamhynek/higgs
 
