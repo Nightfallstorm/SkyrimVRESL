@@ -1,6 +1,7 @@
 #pragma once
 #include "DataHandler.h"
 #include "SaveLoadGame.h"
+#include "eslhooks.h"
 #include <detours/detours.h>
 
 namespace saveloadhooks
@@ -178,10 +179,77 @@ namespace saveloadhooks
 		}
 	};
 
+	struct FormIDLoadHook
+	{
+		static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x581660) };
+
+		struct TrampolineCall : Xbyak::CodeGenerator
+		{
+			TrampolineCall(std::uintptr_t jmpAfterCall, std::uintptr_t func)
+			{
+				Xbyak::Label funcLabel;
+				mov(rcx, rdi);
+				sub(rsp, 0x20);
+				call(ptr[rip + funcLabel]);
+				add(rsp, 0x20);
+				mov(edx, eax);
+				mov(rcx, jmpAfterCall);
+				jmp(rcx);
+				L(funcLabel);
+				dq(func);
+			}
+		};
+
+		static RE::FormID ParseLoadedFormID(std::uint64_t a_unk, RE::FormID a_loadedFormID)
+		{
+			// Dynamic 0xFF index check already occurred at this point
+			logger::trace("Parsing loaded form ID {:x}", a_loadedFormID);
+			auto saveLoadGame = SaveLoadGame::GetSingleton();
+			auto regIndex = a_loadedFormID >> 24;
+			RE::TESFile* file = nullptr;
+			if (regIndex == 0xFE) {
+				auto smallIndex = (a_loadedFormID >> 12) & 0xFFF;
+				if (smallIndex >= saveLoadGame->smallPluginList.size()) {
+					return 0;
+				}
+				file = saveLoadGame->smallPluginList[smallIndex];
+			} else {
+				if (regIndex >= saveLoadGame->regularPluginList.size()) {
+					return 0;
+				}
+				file = saveLoadGame->regularPluginList[regIndex];
+			}
+
+			if (file) {
+				auto newID = a_loadedFormID;
+				eslhooks::adjustFormID::AdjustFormIDFileIndex(file, newID);
+				logger::trace("Parsing success: file {} form ID {:x}", file->fileName, newID);
+				return newID;
+			}
+			return 0;
+		}
+
+		static void Install()
+		{
+			std::uintptr_t start = target.address() + 0x85;
+			std::uintptr_t end = target.address() + 0xB1;
+			REL::safe_fill(start, REL::NOP, end - start);
+			auto trampolineJmp = TrampolineCall(end, stl::unrestricted_cast<std::uintptr_t>(ParseLoadedFormID));
+			REL::safe_write(start, trampolineJmp.getCode(), trampolineJmp.getSize());
+
+			if (trampolineJmp.getSize() > (end - start)) {
+				logger::critical("ParseLoadedFormID trampoline hook {} bytes too big!", trampolineJmp.getSize() - (end - start));
+			}
+			logger::info("Installed ParseLoadedFormID hook at address {:x}", start);
+			logger::info("Installed ParseLoadedFormID hook at offset {:x}", target.offset() + 0x85);
+		}
+	};
+
 	static inline void InstallHooks()
 	{
 		SaveModshook::Install();
 		LoadModsHook::Install();
+		FormIDLoadHook::Install();
 		SaveVersionHook::Install();
 	}
 }

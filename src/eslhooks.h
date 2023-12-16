@@ -90,9 +90,7 @@ namespace eslhooks
 
 		static void AdjustFormIDFileIndex(RE::TESFile* a_file, RE::FormID& a_formID)
 		{
-			if (a_file->IsLight()) {
-				logger::debug("Adjust form {:x} for file {}", a_formID, std::string(a_file->fileName));
-			}
+			logger::trace("Adjust form {:x} for file {} (isLight: {})", a_formID, std::string(a_file->fileName), a_file->IsLight());			
 
 			a_formID &= 0xFFFFFFu;  // Strip file index, now 0x00XXXXXX;
 			std::uint32_t a_fileIndex = 0;
@@ -104,9 +102,8 @@ namespace eslhooks
 				a_fileIndex |= a_file->compileIndex << 24;
 			}
 			a_formID |= a_fileIndex;
-			if (a_file->IsLight()) {
-				logger::debug("Adjust form result: {:x}", a_formID);
-			}
+
+			logger::trace("Adjust form result: {:x}", a_formID);
 		}
 
 		static bool IsFormIDReserved(RE::FormID a_formID)
