@@ -52,15 +52,24 @@
     },
     {
       "cacheVariables": {
+        "PACKAGE": true
+      },
+      "hidden": true,
+      "name": "package"
+    },
+    {
+      "cacheVariables": {
+        "COPY_BUILD": true
+      },
+      "hidden": true,
+      "name": "copy-build"
+    },
+    {
+      "cacheVariables": {
         "CMAKE_CXX_FLAGS": "/EHsc /MP /W4 /external:anglebrackets /external:W0 $penv{CXXFLAGS}"
       },
       "generator": "Visual Studio 16 2019",
-      "inherits": [
-        "vr",
-        "cmake-dev",
-        "vcpkg",
-        "windows"
-      ],
+      "inherits": ["vr", "cmake-dev", "vcpkg", "windows"],
       "name": "vs2019-windows-vcpkg-vr"
     },
     {
@@ -68,14 +77,13 @@
         "CMAKE_CXX_FLAGS": "/EHsc /MP /W4 /external:anglebrackets /external:W0 $penv{CXXFLAGS}"
       },
       "generator": "Visual Studio 17 2022",
-      "inherits": [
-        "vr",
-        "cmake-dev",
-        "vcpkg",
-        "windows"
-      ],
+      "inherits": ["vr", "cmake-dev", "vcpkg", "windows"],
       "name": "vs2022-windows-vcpkg-vr",
       "toolset": "v143"
+    },
+    {
+      "name": "vs2022-windows-vcpkg-vr-package",
+      "inherits": ["vs2022-windows-vcpkg-vr", "package"]
     }
   ],
   "version": 3
