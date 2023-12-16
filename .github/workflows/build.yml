@@ -25,7 +25,9 @@ jobs:
             vcpkgCommitId: "bd1ef2df46303989eeb048eb7aa9b816aa46365e"
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: lukka/get-cmake@latest
       - name: Dump the content of $RUNNER_TEMP
         run: find $RUNNER_TEMP
