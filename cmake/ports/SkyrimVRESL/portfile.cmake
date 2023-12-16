@@ -2,7 +2,7 @@
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO Nightfallstorm/SkyrimVRESL
-    REF cd5e2617ea8a7e3af36a8bea6088614e2e9b233f
+    REF f6ad4eb592583f848a34afb46e75277db4d159fb
     SHA512 5bf0a5519cb56c94bc1f1e8cc7802c4397202bec4dc303d90a7305c9d459c1fde1aeeb228897be7fc204efb4adfe2a8811243a458b6e86ead4fa030973bb3681
     HEAD_REF main
 )
