@@ -1,13 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
 set(NAME "skyrimvresl")
 set(VERSION 1.0.0)
-set(AE_VERSION 1)
-set(VR_VERSION 1)
 
 # ---- Options ----
 option(COPY_BUILD "Copy the build output to the Skyrim directory." FALSE)
-option(BUILD_SKYRIMVR "Build for Skyrim VR" OFF)
-option(BUILD_SKYRIMAE "Build for Skyrim AE" OFF)
+option(BUILD_SKYRIMVR "Build for Skyrim VR" ON)
 option(BACKWARDS_COMPATIBLE "Use TESDataHandler for inheritance" ON)
 
 # ---- Cache build vars ----
@@ -35,27 +32,12 @@ endmacro()
 
 set_from_environment(VCPKG_ROOT)
 
-if(BUILD_SKYRIMAE)
-	add_compile_definitions(SKYRIM_AE)
-	set(CommonLibName "CommonLibSSE")
-	set_from_environment(SkyrimAEPath)
-	set(SkyrimPath ${SkyrimAEPath})
-	set(SkyrimVersion "Skyrim AE")
-	set(VERSION ${VERSION}.${AE_VERSION})
-elseif(BUILD_SKYRIMVR)
-	add_compile_definitions(SKYRIMVR)
-	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-	set(CommonLibName "CommonLibVR")
-	set_from_environment(SkyrimVRPath)
-	set(SkyrimPath ${SkyrimVRPath})
-	set(SkyrimVersion "Skyrim VR")
-	set(VERSION ${VERSION}.${VR_VERSION})
-else()
-	set(CommonLibName "CommonLibSSE")
-	set_from_environment(Skyrim64Path)
-	set(SkyrimPath ${Skyrim64Path})
-	set(SkyrimVersion "Skyrim SSE")
-endif()
+add_compile_definitions(SKYRIMVR)
+add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+set(CommonLibName "CommonLibVR")
+set_from_environment(SkyrimVRPath)
+set(SkyrimPath ${SkyrimVRPath})
+set(SkyrimVersion "Skyrim VR")
 
 if(BACKWARDS_COMPATIBLE)
 	add_compile_definitions(BACKWARDS_COMPATIBLE)
@@ -110,12 +92,6 @@ endif()
 add_compile_definitions(
 	SKSE_SUPPORT_XBYAK
 )
-
-if(BUILD_SKYRIMAE)
-	add_compile_definitions(
-		SKYRIM_SUPPORT_AE
-	)
-endif()
 
 if(MSVC)
 	if(NOT ${CMAKE_GENERATOR} STREQUAL "Ninja")
