@@ -232,7 +232,7 @@ namespace SKSEVRHooks
 		}
 
 		auto& tramp = SKSE::GetTrampoline();
-
+		
 		for (const auto& patch : patches) {
 			logger::info("Trying to patch {} at {:x} with {:x}"sv, patch.name, sksevr_base + patch.offset, (std::uintptr_t)patch.function);
 			std::uintptr_t target = (uintptr_t)(sksevr_base + patch.offset);
@@ -244,7 +244,7 @@ namespace SKSEVRHooks
 			if (NOPpatch) {
 				REL::safe_fill(target, REL::NOP, sizeof(patch.readBytes));  // NOP
 			} else {
-				SKSE::AllocTrampoline(14);
+				tramp.create(14, (void*)target);
 				tramp.write_call<5>(target, patch.function);
 			}
 			logger::info("SKSEVR {} patched"sv, patch.name);
