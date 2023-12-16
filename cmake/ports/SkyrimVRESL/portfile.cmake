@@ -8,7 +8,12 @@ vcpkg_from_github(
 )
 
 # Install codes
-set(SKYRIMVRESLAPI_SOURCE ${SOURCE_PATH}/src/SkyrimVRESLAPI.cpp ${SOURCE_PATH}/src/SkyrimVRESLAPI.h)
+set(SKYRIMVRESLAPI_SOURCE
+    ${SOURCE_PATH}/src/SkyrimVRESLAPI.cpp
+    ${SOURCE_PATH}/src/SkyrimVRESLAPI.h
+    ${SOURCE_PATH}/src/SkyrimVRESLAPI_SKSE.cpp
+    ${SOURCE_PATH}/src/SkyrimVRESLAPI_SKSE.h
+)
 
 file(INSTALL ${SKYRIMVRESLAPI_SOURCE} DESTINATION ${CURRENT_PACKAGES_DIR}/include)
 
