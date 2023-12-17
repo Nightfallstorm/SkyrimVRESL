@@ -11,4 +11,5 @@ set(headers ${headers}
 	src/SaveLoadGame.h
 	src/Settings.h
 	src/Util.h
+	src/Papyrus.h
 )
