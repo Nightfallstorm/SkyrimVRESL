@@ -7,6 +7,7 @@
 #include "sksevrhooks.h"
 #include "startuphooks.h"
 #include "tesfilehooks.h"
+#include "Papyrus.h"
 
 void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 {
@@ -129,6 +130,10 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	SaveLoadGame::InstallHooks();
 	SKSEVRHooks::Install(a_skse->SKSEVersion());
 	logger::info("finish hooks");
+
+	auto papyrus = SKSE::GetPapyrusInterface();
+	papyrus->Register(Papyrus::Bind);
+
 	return true;
 }
 
