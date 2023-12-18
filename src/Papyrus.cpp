@@ -1,6 +1,7 @@
 #include "Papyrus.h"
 #include "DataHandler.h"
 
+// Code converted from https://github.com/ianpatt/skse64/blob/master/skse64/PapyrusGame.cpp
 namespace Papyrus
 {
 	RE::TESFile* GetFileBySKSEIndex(std::uint32_t a_index) {
