@@ -1,4 +1,5 @@
 #include "DataHandler.h"
+#include "Papyrus.h"
 #include "Settings.h"
 #include "SkyrimVRESLAPI.h"
 #include "eslhooks.h"
@@ -7,7 +8,6 @@
 #include "sksevrhooks.h"
 #include "startuphooks.h"
 #include "tesfilehooks.h"
-#include "Papyrus.h"
 
 void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 {
