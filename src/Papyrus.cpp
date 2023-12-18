@@ -4,7 +4,8 @@
 // Code converted from https://github.com/ianpatt/skse64/blob/master/skse64/PapyrusGame.cpp
 namespace Papyrus
 {
-	RE::TESFile* GetFileBySKSEIndex(std::uint32_t a_index) {
+	RE::TESFile* GetFileBySKSEIndex(std::uint32_t a_index)
+	{
 		DataHandler* pDataHandler = DataHandler::GetSingleton();
 		if (a_index > 0xFF) {
 			std::uint32_t adjusted = a_index - LIGHT_MOD_OFFSET;
@@ -19,7 +20,8 @@ namespace Papyrus
 		}
 	}
 	// Copies of SKSE SE/AE functions related to mods and ESLs, converted to CLIB
-	std::uint32_t GetModByName(StaticFunctionTag*, RE::BSFixedString name) {
+	std::uint32_t GetModByName(StaticFunctionTag*, RE::BSFixedString name)
+	{
 		DataHandler* pDataHandler = DataHandler::GetSingleton();
 		const RE::TESFile* modInfo = pDataHandler->LookupModByName(name.data());
 		if (!modInfo || modInfo->compileIndex == 0xFF)
@@ -138,7 +140,6 @@ namespace Papyrus
 		return false;
 	}
 
-
 	bool Bind(VM* a_vm)
 	{
 		if (!a_vm) {
@@ -147,8 +148,8 @@ namespace Papyrus
 		}
 
 		logger::info("Overriding SKSEVR functions..."sv);
-		
-		BIND(GetModByName, true); 
+
+		BIND(GetModByName, true);
 
 		logger::info("Registered GetModByName"sv);
 
