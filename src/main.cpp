@@ -9,7 +9,8 @@
 #include "startuphooks.h"
 #include "tesfilehooks.h"
 
-int GetMaxStdio() {
+int GetMaxStdio()
+{
 	const HMODULE crtStdioModule = GetModuleHandleA("API-MS-WIN-CRT-STDIO-L1-1-0.DLL");
 
 	if (!crtStdioModule) {
@@ -22,12 +23,11 @@ int GetMaxStdio() {
 	return maxStdio;
 }
 
-
 void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 {
 	switch (a_message->type) {
 	case SKSE::MessagingInterface::kPostLoad:
-		{   // Called after all plugins have finished running
+		{  // Called after all plugins have finished running
 			// SKSEPlugin_Load.
 			// It is now safe to do multithreaded operations, or operations against other plugins.
 			if (SKSE::GetMessagingInterface()->RegisterListener(nullptr, SkyrimVRESLPluginAPI::ModMessageHandler))
