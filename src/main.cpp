@@ -9,19 +9,37 @@
 #include "startuphooks.h"
 #include "tesfilehooks.h"
 
+int GetMaxStdio() {
+	const HMODULE crtStdioModule = GetModuleHandleA("API-MS-WIN-CRT-STDIO-L1-1-0.DLL");
+
+	if (!crtStdioModule) {
+		logger::critical("crt stdio module not found, failed to check stdio patch");
+		return 0;
+	}
+
+	const auto maxStdio = reinterpret_cast<decltype(&_getmaxstdio)>(GetProcAddress(crtStdioModule, "_getmaxstdio"))();
+
+	return maxStdio;
+}
+
+
 void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 {
 	switch (a_message->type) {
-	case SKSE::MessagingInterface::kPostLoad:  // Called after all plugins have finished running
-											   // SKSEPlugin_Load.
-		// It is now safe to do multithreaded operations, or operations against other plugins.
-		if (SKSE::GetMessagingInterface()->RegisterListener(nullptr, SkyrimVRESLPluginAPI::ModMessageHandler))
-			logger::info("Successfully registered SKSE listener {} with buildnumber {}",
-				SkyrimVRESLPluginAPI::SkyrimVRESLPluginName, g_interface001.GetBuildNumber());
-		else
-			logger::info("Unable to register SKSE listener");
-		break;
+	case SKSE::MessagingInterface::kPostLoad:
+		{   // Called after all plugins have finished running
+			// SKSEPlugin_Load.
+			// It is now safe to do multithreaded operations, or operations against other plugins.
+			if (SKSE::GetMessagingInterface()->RegisterListener(nullptr, SkyrimVRESLPluginAPI::ModMessageHandler))
+				logger::info("Successfully registered SKSE listener {} with buildnumber {}",
+					SkyrimVRESLPluginAPI::SkyrimVRESLPluginName, g_interface001.GetBuildNumber());
+			else
+				logger::info("Unable to register SKSE listener");
 
+			if (GetMaxStdio() < 2048)
+				logger::warn("Required Engine Fixes VR MaxStdio patch not detected. SkyrimVR will hang if you have more than {} plugins installed in /Data--even if inactive!", GetMaxStdio());
+			break;
+		}
 	case SKSE::MessagingInterface::kDataLoaded:
 		{
 			logger::debug("kDataLoaded: Printing files");
@@ -120,8 +138,6 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	SKSE::Init(a_skse);
 	auto messaging = SKSE::GetMessagingInterface();
 	messaging->RegisterListener(MessageHandler);
-	if (_getmaxstdio() < 2048)
-		logger::warn("Required Engine Fixes VR MaxStdio patch not detected. SkyrimVR will hang if you have more than {} plugins installed in /Data--even if inactive!", _getmaxstdio());
 	tesfilehooks::InstallHooks();
 	startuphooks::InstallHooks();
 	saveloadhooks::InstallHooks();
