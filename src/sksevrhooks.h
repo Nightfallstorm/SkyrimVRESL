@@ -5,6 +5,18 @@
 
 namespace SKSEVRHooks
 {
+	struct TrampolineJmp : Xbyak::CodeGenerator
+	{
+		TrampolineJmp(std::uintptr_t func)
+		{
+			Xbyak::Label funcLabel;
+
+			jmp(ptr[rip + funcLabel]);
+			L(funcLabel);
+			dq(func);
+		}
+	};
+
 
 	// code converted from skse64
 	static std::unordered_map<std::uint32_t, std::uint32_t> s_savedModIndexMap;
@@ -206,20 +218,18 @@ namespace SKSEVRHooks
 			logger::info("Core_LoadCallback_Switch hooked at offset SKSEVR::{:x}", target);
 		}
 	};
-	bool NOPpatch = false;
 
 	struct SKSEVRPatches
 	{
 		std::string name;
 		std::uintptr_t offset;
-		std::uint8_t readBytes[5];
 		void* function;
 	};
 
 	std::vector<SKSEVRPatches> patches{
-		{ "SaveModList", 0x283bd, { 0xe8, 0x8e, 0xfc, 0xff, 0xff }, SavePluginsList },
-		{ "LoadModList", 0x2871b, { 0xe8, 0xc0, 0xf7, 0xff, 0xff }, LoadModList },
-		{ "LoadLightModList", 0x28694, { 0xe8, 0x77, 0xfa, 0xff, 0xff }, LoadLightModList },
+		{ "SaveModList", 0x28050, SavePluginsList },
+		{ "LoadModList", 0x27EE0, LoadModList },
+		{ "LoadLightModList", 0x28110, LoadLightModList },
 	};
 	void Install(std::uint32_t a_skse_version)
 	{
@@ -231,22 +241,12 @@ namespace SKSEVRHooks
 			return;
 		}
 
-		auto& tramp = SKSE::GetTrampoline();
-
 		for (const auto& patch : patches) {
 			logger::info("Trying to patch {} at {:x} with {:x}"sv, patch.name, sksevr_base + patch.offset, (std::uintptr_t)patch.function);
 			std::uintptr_t target = (uintptr_t)(sksevr_base + patch.offset);
-			const std::uint8_t* read_addr = (std::uint8_t*)target;
-			if (std::memcmp((const void*)read_addr, patch.readBytes, sizeof(patch.readBytes))) {
-				logger::info("{} Read code is not as expected; not patching"sv, patch.name);
-				continue;
-			}
-			if (NOPpatch) {
-				REL::safe_fill(target, REL::NOP, sizeof(patch.readBytes));  // NOP
-			} else {
-				tramp.create(14, (void*)target);
-				tramp.write_call<5>(target, patch.function);
-			}
+			auto jmp = TrampolineJmp((std::uintptr_t) patch.function);
+			REL::safe_write(target, jmp.getCode(), jmp.getSize());
+
 			logger::info("SKSEVR {} patched"sv, patch.name);
 		}
 		Core_LoadCallback_Switch::Install(sksevr_base);
