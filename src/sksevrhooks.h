@@ -17,7 +17,6 @@ namespace SKSEVRHooks
 		}
 	};
 
-
 	// code converted from skse64
 	static std::unordered_map<std::uint32_t, std::uint32_t> s_savedModIndexMap;
 
@@ -244,7 +243,7 @@ namespace SKSEVRHooks
 		for (const auto& patch : patches) {
 			logger::info("Trying to patch {} at {:x} with {:x}"sv, patch.name, sksevr_base + patch.offset, (std::uintptr_t)patch.function);
 			std::uintptr_t target = (uintptr_t)(sksevr_base + patch.offset);
-			auto jmp = TrampolineJmp((std::uintptr_t) patch.function);
+			auto jmp = TrampolineJmp((std::uintptr_t)patch.function);
 			REL::safe_write(target, jmp.getCode(), jmp.getSize());
 
 			logger::info("SKSEVR {} patched"sv, patch.name);
