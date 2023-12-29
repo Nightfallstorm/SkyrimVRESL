@@ -29,7 +29,8 @@ struct DataHandlerCTORHook
 };
 
 #ifndef BACKWARDS_COMPATIBLE
-const RE::TESFile* DataHandler::LookupModByName(std::string_view a_modName) {
+const RE::TESFile* DataHandler::LookupModByName(std::string_view a_modName)
+{
 	RE::TESDataHandler* handler = RE::TESDataHandler::GetSingleton();
 	return handler->LookupModByName(a_modName);
 }
