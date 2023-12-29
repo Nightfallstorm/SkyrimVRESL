@@ -28,6 +28,13 @@ struct DataHandlerCTORHook
 	}
 };
 
+#ifndef BACKWARDS_COMPATIBLE
+const RE::TESFile* DataHandler::LookupModByName(std::string_view a_modName) {
+	RE::TESDataHandler* handler = RE::TESDataHandler::GetSingleton();
+	return handler->LookupModByName(a_modName);
+}
+#endif
+
 void DataHandler::InstallHooks()
 {
 #ifdef BACKWARDS_COMPATIBLE
