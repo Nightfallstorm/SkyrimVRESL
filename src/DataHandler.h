@@ -24,7 +24,9 @@ class DataHandler : public
 public:
 	static DataHandler* GetSingleton();
 	static void InstallHooks();
+
 #ifndef BACKWARDS_COMPATIBLE
+	const RE::TESFile* LookupModByName(std::string_view a_modName);
 	// members
 	std::uint8_t pad001;                                               // 001
 	std::uint16_t pad002;                                              // 002
