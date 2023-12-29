@@ -370,7 +370,7 @@ namespace tesfilehooks
 			} else {
 				a_duplicate->recordFlags.reset(RE::TESFile::RecordFlag::kMaster);
 			}
-			
+
 			a_duplicate->flags &= 0xFFFFFFu;
 			a_duplicate->flags |= a_orig->compileIndex << 24;
 			a_duplicate->compileIndex = a_orig->compileIndex;
