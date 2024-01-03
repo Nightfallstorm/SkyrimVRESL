@@ -135,8 +135,6 @@ namespace tesfilehooks
 				mov(rcx, jmpOnSuccess);
 				jmp(rcx);
 				L(failLabel);
-				mov(rcx, fileIndexCount);
-				mov(dword[rcx], 0);
 				mov(rcx, jmpOnFail);
 				jmp(rcx);
 				L(funcLabel);
@@ -147,7 +145,11 @@ namespace tesfilehooks
 		static bool IndexCheck()
 		{
 			fileIndexCount++;
-			return fileIndexCount >= filesArray.size();
+			if (fileIndexCount >= filesArray.size()) {
+				fileIndexCount = 0;
+				return true;
+			}
+			return false;
 		}
 
 		static RE::TESFile* OpenFileLoop()
@@ -339,34 +341,57 @@ namespace tesfilehooks
 
 	struct DuplicateHook
 	{
-		// Copy over the smallCompileIndex, which is padding in VR normally
-		typedef RE::TESFile*(WINAPI* pFunc)(RE::TESFile*, std::uint32_t);  // typedef to simplify signature
+		static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x18F060) };
 
-		static RE::TESFile* thunk(RE::TESFile* a_self, std::uint32_t a_cacheSize)
+		struct TrampolineCall : Xbyak::CodeGenerator
 		{
-			RE::TESFile* duplicateFile = originalFunction(a_self, a_cacheSize);
-			duplicateFile->smallFileCompileIndex = a_self->smallFileCompileIndex;
-			return duplicateFile;
-		}
+			TrampolineCall(std::uintptr_t jmpAfterCall, std::uintptr_t func)
+			{
+				Xbyak::Label funcLabel;
+				mov(rcx, rsi);
+				mov(rdx, rdi);
+				sub(rsp, 0x20);
+				call(ptr[rip + funcLabel]);
+				add(rsp, 0x20);
+				mov(rcx, jmpAfterCall);
+				jmp(rcx);
+				L(funcLabel);
+				dq(func);
+			}
+		};
 
-		static inline pFunc originalFunction;
+		// Copy over smallCompileIndex right around where SE copies it
+		// The smallCompileIndex is padding in VR normally, so we can directly set it and reference it
+		static void SetFlagsAndIndex(RE::TESFile* a_orig, RE::TESFile* a_duplicate)
+		{
+			// Copy of original VR logic we overwrote in the trampoline setup
+			if (a_orig->recordFlags.all(RE::TESFile::RecordFlag::kMaster)) {
+				a_duplicate->recordFlags.set(RE::TESFile::RecordFlag::kMaster);
+			} else {
+				a_duplicate->recordFlags.reset(RE::TESFile::RecordFlag::kMaster);
+			}
+
+			a_duplicate->flags &= 0xFFFFFFu;
+			a_duplicate->flags |= a_orig->compileIndex << 24;
+			a_duplicate->compileIndex = a_orig->compileIndex;
+			// End of VR logic copy
+			a_duplicate->smallFileCompileIndex = a_orig->smallFileCompileIndex;
+
+			logger::debug("Successfully copied duplicate file {}, ESL flagged: {}", a_duplicate->fileName, a_duplicate->IsLight());
+		}
 
 		// Install our hook at the specified address
 		static inline void Install()
 		{
-			REL::Relocation<std::uintptr_t> target{ REL::ID(13923) };
-			const auto targetAddress = REL::ID(13923).address();
-			const auto funcAddress = &thunk;
-			originalFunction = (pFunc)targetAddress;
-			DetourTransactionBegin();
-			DetourUpdateThread(GetCurrentThread());
-			DetourAttach(&(PVOID&)originalFunction, (PBYTE)&thunk);
-			if (DetourTransactionCommit() == NO_ERROR)
-				logger::info(
-					"Installed TESFile::Duplicate at {0:x} with replacement from address {0:x}",
-					targetAddress, (void*)funcAddress);
-			else
-				logger::warn("Failed to install TESFile::Duplicate hook");
+			std::uintptr_t start = target.address() + 0xFC;
+			std::uintptr_t end = target.address() + 0x137;
+			REL::safe_fill(start, REL::NOP, end - start);
+			auto trampolineJmp = TrampolineCall(end, stl::unrestricted_cast<std::uintptr_t>(SetFlagsAndIndex));
+			REL::safe_write(start, trampolineJmp.getCode(), trampolineJmp.getSize());
+
+			if (trampolineJmp.getSize() > (end - start)) {
+				logger::critical("DuplicateHook trampoline hook {} bytes too big!", trampolineJmp.getSize() - (end - start));
+			}
 		}
 	};
 
