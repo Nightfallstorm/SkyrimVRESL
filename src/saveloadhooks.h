@@ -128,7 +128,7 @@ namespace saveloadhooks
 			return func(a_buffer);
 		}
 
-		// Copy of logic from SE/AE 
+		// Copy of logic from SE/AE
 		static bool LoadMods(SaveLoadGame* a_saveloadGame, Win32FileType* a_unk2, std::uint64_t a_unk3)
 		{
 			logger::info("LoadMods called");
@@ -150,7 +150,7 @@ namespace saveloadhooks
 					a_saveloadGame->regularPluginList.push_back(file);
 				} else {
 					logger::debug("File {} is not loaded for save", std::string(file->fileName));
-					a_saveloadGame->regularPluginList.push_back(nullptr); 
+					a_saveloadGame->regularPluginList.push_back(nullptr);
 					loadOrderValid = false;
 				}
 			}
