@@ -200,11 +200,6 @@ namespace startuphooks
 			SKSE::AllocTrampoline(14);
 			trampoline2.write_branch<5>(start, (std::uintptr_t)result);
 
-			//REL::safe_write(start, trampolineJmp.getCode(), trampolineJmp.getSize());
-			//if (trampolineJmp.getSize() > end - start) {
-			//	logger::critical("InstallAddFile trampoline too big by {} bytes!", trampolineJmp.getSize() - (end - start));
-			//}
-
 			logger::info("Install LoadFilesHook hook at address {:x}", start);
 		}
 
