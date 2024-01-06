@@ -128,6 +128,7 @@ namespace saveloadhooks
 			return func(a_buffer);
 		}
 
+		// Copy of logic from SE/AE
 		static bool LoadMods(SaveLoadGame* a_saveloadGame, Win32FileType* a_unk2, std::uint64_t a_unk3)
 		{
 			logger::info("LoadMods called");
@@ -148,6 +149,8 @@ namespace saveloadhooks
 					logger::debug("Loading file {}", std::string(file->fileName));
 					a_saveloadGame->regularPluginList.push_back(file);
 				} else {
+					logger::debug("File {} is not loaded for save", std::string(file->fileName));
+					a_saveloadGame->regularPluginList.push_back(nullptr);
 					loadOrderValid = false;
 				}
 			}
@@ -161,6 +164,8 @@ namespace saveloadhooks
 						a_saveloadGame->smallPluginList.push_back(file);
 						logger::debug("Loading small file {}", std::string(file->fileName));
 					} else {
+						logger::debug("Small File {} is not loaded for save", std::string(file->fileName));
+						a_saveloadGame->smallPluginList.push_back(nullptr);
 						loadOrderValid = false;
 					}
 				}
@@ -226,6 +231,9 @@ namespace saveloadhooks
 				logger::trace("Parsing success: file {} form ID {:x}", file->fileName, newID);
 				return newID;
 			}
+
+			// file invalid, this means save references a plugin that doesn't exist in the load order
+			// Return 0 to indicate the form is invalid
 			return 0;
 		}
 
