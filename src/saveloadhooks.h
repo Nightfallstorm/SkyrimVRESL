@@ -149,7 +149,7 @@ namespace saveloadhooks
 					logger::debug("Loading file {}", std::string(file->fileName));
 					a_saveloadGame->regularPluginList.push_back(file);
 				} else {
-					logger::debug("File {} is not loaded for save", std::string(file->fileName));
+					logger::debug("File {} is not loaded for save", fileName);
 					a_saveloadGame->regularPluginList.push_back(nullptr);
 					loadOrderValid = false;
 				}
@@ -164,7 +164,7 @@ namespace saveloadhooks
 						a_saveloadGame->smallPluginList.push_back(file);
 						logger::debug("Loading small file {}", std::string(file->fileName));
 					} else {
-						logger::debug("Small File {} is not loaded for save", std::string(file->fileName));
+						logger::debug("Small File {} is not loaded for save", fileName);
 						a_saveloadGame->smallPluginList.push_back(nullptr);
 						loadOrderValid = false;
 					}
