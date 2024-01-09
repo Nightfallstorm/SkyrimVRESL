@@ -5,6 +5,9 @@
 
 namespace SKSEVRHooks
 {
+	// code converted from skse64
+	static std::unordered_map<std::uint32_t, std::uint32_t> s_savedModIndexMap;
+
 	struct TrampolineJmp : Xbyak::CodeGenerator
 	{
 		TrampolineJmp(std::uintptr_t func)
@@ -17,8 +20,10 @@ namespace SKSEVRHooks
 		}
 	};
 
-	// code converted from skse64
-	static std::unordered_map<std::uint32_t, std::uint32_t> s_savedModIndexMap;
+	void EraseMap()
+	{
+		s_savedModIndexMap.clear();
+	}
 
 	void SavePluginsList(SKSE::SerializationInterface* intfc)
 	{
@@ -143,6 +148,7 @@ namespace SKSEVRHooks
 		DataHandler* dhand = DataHandler::GetSingleton();
 
 		logger::info("Loading plugin list:");
+		EraseMap(); // TODO: Fix Revert_Callback hook and remove this. This is a workaround!
 
 		char name[0x104] = { 0 };
 		std::uint16_t nameLen = 0;
@@ -175,13 +181,91 @@ namespace SKSEVRHooks
 		}
 	}
 
+	std::uint32_t ResolveModIndex(std::uint32_t modIndex)
+	{
+		auto it = s_savedModIndexMap.find(modIndex);
+		if (it != s_savedModIndexMap.end()) {
+			return it->second;
+		}
+
+		return 0xFF;
+	}
+
+	struct ResolveFormIdHook {
+
+		// Converted from SKSESE
+		static bool ResolveFormId(std::uint32_t formId, std::uint32_t* formIdOut)
+		{
+			std::uint32_t modID = formId >> 24;
+			if (modID == 0xFF) {
+				*formIdOut = formId;
+				return true;
+			}
+
+			if (modID == 0xFE) {
+				modID = formId >> 12;
+			}
+
+			std::uint32_t loadedModID = ResolveModIndex(modID);
+			if (loadedModID < 0xFF) {
+				*formIdOut = (formId & 0x00FFFFFF) | (((std::uint32_t)loadedModID) << 24);
+				return true;
+			} else if (loadedModID > 0xFF) {
+				*formIdOut = (loadedModID << 12) | (formId & 0x00000FFF);
+				return true;
+			}
+			return false;
+		}
+
+		static void Install(std::uintptr_t a_base)
+		{
+			std::uintptr_t target = a_base + 0x9BD60;
+			auto jmp = TrampolineJmp((std::uintptr_t)ResolveFormId);
+			REL::safe_write(target, jmp.getCode(), jmp.getSize());
+		}
+	};
+
+	struct ResolveHandleHook
+	{
+		// Converted from SKSESE
+		static bool ResolveHandle(std::uint64_t handle, std::uint64_t* handleOut)
+		{
+			std::uint32_t modID = (handle & 0xFF000000) >> 24;
+			if (modID == 0xFF) {
+				*handleOut = handle;
+				return true;
+			}
+
+			if (modID == 0xFE) {
+				modID = (handle >> 12) & 0xFFFFF;
+			}
+
+			std::uint64_t loadedModID = (std::uint64_t)ResolveModIndex(modID);
+			if (loadedModID < 0xFF) {
+				*handleOut = (handle & 0xFFFFFFFF00FFFFFF) | (((std::uint64_t)loadedModID) << 24);
+				return true;
+			} else if (loadedModID > 0xFF) {
+				*handleOut = (handle & 0xFFFFFFFF00000FFF) | (loadedModID << 12);
+				return true;
+			}
+			return false;
+		}
+
+		static void Install(std::uintptr_t a_base)
+		{
+			std::uintptr_t target = a_base + 0x9BE00;
+			auto jmp = TrampolineJmp((std::uintptr_t)ResolveHandle);
+			REL::safe_write(target, jmp.getCode(), jmp.getSize());
+		}
+	};
+
 	struct Core_LoadCallback_Switch : Xbyak::CodeGenerator
 	{
 		Core_LoadCallback_Switch(std::uintptr_t beginSwitch, std::uintptr_t endLoop, std::uintptr_t func = stl::unrestricted_cast<std::uintptr_t>(LoadPluginList))
 		{
 			Xbyak::Label funcLabel;
-			mov(rdx, dword[rsp + 0x30]);
-			cmp(rdx, 'PLGN');  // 'PLGN'
+			mov(edx, dword[rsp + 0x30]);
+			cmp(edx, 'PLGN');  // 'PLGN'
 			jnz("KeepChecking");
 			mov(rcx, rbx);  // LoadPluginList(intfc);
 			sub(rsp, 0x20);
@@ -190,6 +274,7 @@ namespace SKSEVRHooks
 			mov(rcx, endLoop);  // break out
 			jmp(rcx);
 			L("KeepChecking");
+			cmp(edx, 'LMOD');
 			mov(rcx, beginSwitch);  // keep switching
 			jmp(rcx);
 			L(funcLabel);
@@ -199,8 +284,8 @@ namespace SKSEVRHooks
 
 		static inline void Install(std::uintptr_t a_base)
 		{
-			std::uintptr_t target{ a_base + 0x28573 };
-			std::uintptr_t beginSwitch{ a_base + 0x28584 };
+			std::uintptr_t target{ a_base + 0x28580 };
+			std::uintptr_t beginSwitch{ a_base + 0x2858A };
 			std::uintptr_t endSwitch{ a_base + 0x28753 };
 
 			auto newCompareCheck = Core_LoadCallback_Switch(beginSwitch, endSwitch);
@@ -215,6 +300,44 @@ namespace SKSEVRHooks
 
 			logger::info("Core_LoadCallback_Switch hooked at address SKSEVR::{:x}", target);
 			logger::info("Core_LoadCallback_Switch hooked at offset SKSEVR::{:x}", target);
+		}
+	};
+
+	struct Core_RevertCallbackHook : Xbyak::CodeGenerator
+	{
+		Core_RevertCallbackHook(std::uintptr_t jmpBack, std::uintptr_t func = stl::unrestricted_cast<std::uintptr_t>(EraseMap))
+		{
+			Xbyak::Label funcLabel;
+			mov(ptr[rsp+0x8], rbx);
+			push(rdi);
+			sub(rsp, 0x20);
+			sub(rsp, 0x20);
+			call(ptr[rip + funcLabel]);
+			add(rsp, 0x20);
+			mov(rcx, jmpBack);  // break out
+			jmp(rcx);
+			L(funcLabel);
+			dq(func);
+		}
+		
+		// Install our hook at the specified address
+		static inline void Install(std::uintptr_t a_base)
+		{
+			std::uintptr_t target{ a_base + 0x28210 };
+			std::uintptr_t jmpBack{ a_base + 0x2821A };
+
+			auto newCompareCheck = Core_RevertCallbackHook(jmpBack);
+			newCompareCheck.ready();
+			int fillRange = jmpBack - target;
+			REL::safe_fill(target, REL::NOP, fillRange);
+			auto& trampoline = SKSE::GetTrampoline();
+			trampoline.create(newCompareCheck.getSize(), (void*)target);
+			auto result = trampoline.allocate(newCompareCheck);
+			logger::info("Core_RevertCallbackHook hookin {:x} to jmp to {:x} with base {:x}", target, (std::uintptr_t)result, a_base);
+			trampoline.write_branch<5>(target, result);
+
+			logger::info("Core_RevertCallbackHook hooked at address SKSEVR::{:x}", target);
+			logger::info("Core_RevertCallbackHook hooked at offset SKSEVR::{:x}", target);
 		}
 	};
 
@@ -249,5 +372,8 @@ namespace SKSEVRHooks
 			logger::info("SKSEVR {} patched"sv, patch.name);
 		}
 		Core_LoadCallback_Switch::Install(sksevr_base);
+		//Core_RevertCallbackHook::Install(sksevr_base); // This is broken currently, 
+		ResolveFormIdHook::Install(sksevr_base);
+		ResolveHandleHook::Install(sksevr_base);
 	}
 }
