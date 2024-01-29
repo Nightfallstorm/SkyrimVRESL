@@ -148,7 +148,7 @@ namespace SKSEVRHooks
 		DataHandler* dhand = DataHandler::GetSingleton();
 
 		logger::info("Loading plugin list:");
-		EraseMap(); // TODO: Fix Revert_Callback hook and remove this. This is a workaround!
+		EraseMap();  // TODO: Fix Revert_Callback hook and remove this. This is a workaround!
 
 		char name[0x104] = { 0 };
 		std::uint16_t nameLen = 0;
@@ -191,8 +191,8 @@ namespace SKSEVRHooks
 		return 0xFF;
 	}
 
-	struct ResolveFormIdHook {
-
+	struct ResolveFormIdHook
+	{
 		// Converted from SKSESE
 		static bool ResolveFormId(std::uint32_t formId, std::uint32_t* formIdOut)
 		{
@@ -308,7 +308,7 @@ namespace SKSEVRHooks
 		Core_RevertCallbackHook(std::uintptr_t jmpBack, std::uintptr_t func = stl::unrestricted_cast<std::uintptr_t>(EraseMap))
 		{
 			Xbyak::Label funcLabel;
-			mov(ptr[rsp+0x8], rbx);
+			mov(ptr[rsp + 0x8], rbx);
 			push(rdi);
 			sub(rsp, 0x20);
 			sub(rsp, 0x20);
@@ -319,7 +319,7 @@ namespace SKSEVRHooks
 			L(funcLabel);
 			dq(func);
 		}
-		
+
 		// Install our hook at the specified address
 		static inline void Install(std::uintptr_t a_base)
 		{
@@ -372,7 +372,7 @@ namespace SKSEVRHooks
 			logger::info("SKSEVR {} patched"sv, patch.name);
 		}
 		Core_LoadCallback_Switch::Install(sksevr_base);
-		//Core_RevertCallbackHook::Install(sksevr_base); // This is broken currently, 
+		//Core_RevertCallbackHook::Install(sksevr_base); // This is broken currently,
 		ResolveFormIdHook::Install(sksevr_base);
 		ResolveHandleHook::Install(sksevr_base);
 	}
