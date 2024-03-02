@@ -45,10 +45,12 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 			logger::debug("kDataLoaded: Printing files");
 			auto handler = DataHandler::GetSingleton();
 			for (auto file : handler->files) {
-				logger::debug("file {} recordFlags: {:x} index {:x}",
+				logger::debug("file {} recordFlags: {:x} index {:x} isOverlay: {}",
 					std::string(file->fileName),
 					file->recordFlags.underlying(),
-					file->compileIndex);
+					file->compileIndex,
+					isOverlay(file)
+				);
 			}
 
 			logger::debug("kDataLoaded: Printing loaded files");

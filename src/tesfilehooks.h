@@ -5,24 +5,31 @@
 namespace tesfilehooks
 {
 	static inline RE::BSTArray<RE::TESFile*> filesArray = RE::BSTArray<RE::TESFile*>();
+	static inline RE::BSTArray<RE::TESFile*> filesArrayOverlay = RE::BSTArray<RE::TESFile*>();
 
 	// SE loops through handler->files and then handler->activeFile last
 	// We use an array to mimic this for VR
-	static void PopulateFilesArray()
+	static void PopulateFilesArray(bool includeOverlay)
 	{
+		auto& fileArray = filesArray;
+		if (includeOverlay) { // Overlays aren't in compiled file list, so they get special treatment
+			fileArray = filesArrayOverlay;
+		}
 		auto handler = DataHandler::GetSingleton();
-		if (filesArray.empty() ||
-			filesArray.size() != handler->compiledFileCollection.files.size() + handler->compiledFileCollection.smallFiles.size()) {
+		if (fileArray.empty() ||
+			fileArray.size() != handler->compiledFileCollection.files.size() + handler->compiledFileCollection.smallFiles.size()) {
 			// Ensure filesArray is synchronized with handler
-			filesArray.clear();
+			fileArray.clear();
 			for (auto file : handler->files) {
 				if (file->compileIndex != 0xFF && file != handler->activeFile) {
-					filesArray.push_back(file);
+					fileArray.push_back(file);
+				} else if (isOverlay(file) && includeOverlay) {
+					fileArray.push_back(file);
 				}
 			}
 
 			if (handler->activeFile) {
-				filesArray.push_back(handler->activeFile);
+				fileArray.push_back(handler->activeFile);
 			}
 		}
 	}
@@ -30,7 +37,7 @@ namespace tesfilehooks
 	static std::uint32_t GetLoadedModCountSE(DataHandler* a_handler)
 	{
 		logger::info("GetLoadedModCountSE called!");
-		PopulateFilesArray();
+		PopulateFilesArray(false);
 		return filesArray.size();
 	}
 
@@ -145,7 +152,7 @@ namespace tesfilehooks
 		static bool IndexCheck()
 		{
 			fileIndexCount++;
-			if (fileIndexCount >= filesArray.size()) {
+			if (fileIndexCount >= filesArrayOverlay.size()) {
 				fileIndexCount = 0;
 				return true;
 			}
@@ -157,9 +164,9 @@ namespace tesfilehooks
 			// VR loops through and opens loadedMods until one returns true
 			// SE loops through `files` then `activeFile` and opens until one returns true
 			logger::debug("OpenFileLoop called with index {}", fileIndexCount);
-			PopulateFilesArray();
-			if (filesArray[fileIndexCount]->OpenTES(RE::NiFile::OpenMode::kReadOnly, false)) {
-				return filesArray[fileIndexCount];
+			PopulateFilesArray(true);
+			if (filesArrayOverlay[fileIndexCount]->OpenTES(RE::NiFile::OpenMode::kReadOnly, false)) {
+				return filesArrayOverlay[fileIndexCount];
 			}
 			return nullptr;
 		}
