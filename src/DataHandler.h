@@ -14,7 +14,8 @@
 
 using namespace RE;
 
-struct TESOverlayFileCollection : RE::TESFileCollection {
+struct TESOverlayFileCollection : RE::TESFileCollection
+{
 	BSTArray<TESFile*> overlayFiles;  // 20
 };
 
@@ -28,7 +29,8 @@ static inline void setOverlay(RE::TESFile* a_file)
 	*recordFlags = newFlags;
 }
 
-static inline bool isOverlay(RE::TESFile* a_file) {
+static inline bool isOverlay(RE::TESFile* a_file)
+{
 	int isOverlay = a_file->recordFlags.underlying() & overlayBit;
 	return isOverlay != 0;
 }

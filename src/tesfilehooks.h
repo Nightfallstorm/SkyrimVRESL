@@ -12,7 +12,7 @@ namespace tesfilehooks
 	static void PopulateFilesArray(bool includeOverlay)
 	{
 		auto& fileArray = filesArray;
-		if (includeOverlay) { // Overlays aren't in compiled file list, so they get special treatment
+		if (includeOverlay) {  // Overlays aren't in compiled file list, so they get special treatment
 			fileArray = filesArrayOverlay;
 		}
 		auto handler = DataHandler::GetSingleton();

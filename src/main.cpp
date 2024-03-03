@@ -49,8 +49,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_message)
 					std::string(file->fileName),
 					file->recordFlags.underlying(),
 					file->compileIndex,
-					isOverlay(file)
-				);
+					isOverlay(file));
 			}
 
 			logger::debug("kDataLoaded: Printing loaded files");
