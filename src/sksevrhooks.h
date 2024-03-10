@@ -148,7 +148,6 @@ namespace SKSEVRHooks
 		DataHandler* dhand = DataHandler::GetSingleton();
 
 		logger::info("Loading plugin list:");
-		EraseMap();  // TODO: Fix Revert_Callback hook and remove this. This is a workaround!
 
 		char name[0x104] = { 0 };
 		std::uint16_t nameLen = 0;
@@ -282,7 +281,7 @@ namespace SKSEVRHooks
 		}
 		// Install our hook at the specified address
 
-		static inline void Install(std::uintptr_t a_base)
+		static inline void Install(std::uintptr_t a_base, SKSE::Trampoline* a_trampoline)
 		{
 			std::uintptr_t target{ a_base + 0x28580 };
 			std::uintptr_t beginSwitch{ a_base + 0x2858A };
@@ -292,11 +291,9 @@ namespace SKSEVRHooks
 			newCompareCheck.ready();
 			int fillRange = beginSwitch - target;
 			REL::safe_fill(target, REL::NOP, fillRange);
-			auto& trampoline = SKSE::GetTrampoline();
-			trampoline.create(newCompareCheck.getSize(), (void*)target);
-			auto result = trampoline.allocate(newCompareCheck);
+			auto result = a_trampoline->allocate(newCompareCheck);
 			logger::info("Core_LoadCallback_switch hookin {:x} to jmp to {:x} with base {:x}", target, (std::uintptr_t)result, a_base);
-			trampoline.write_branch<5>(target, result);
+			a_trampoline->write_branch<5>(target, result);
 
 			logger::info("Core_LoadCallback_Switch hooked at address SKSEVR::{:x}", target);
 			logger::info("Core_LoadCallback_Switch hooked at offset SKSEVR::{:x}", target);
@@ -321,7 +318,7 @@ namespace SKSEVRHooks
 		}
 
 		// Install our hook at the specified address
-		static inline void Install(std::uintptr_t a_base)
+		static inline void Install(std::uintptr_t a_base, SKSE::Trampoline* a_trampoline)
 		{
 			std::uintptr_t target{ a_base + 0x28210 };
 			std::uintptr_t jmpBack{ a_base + 0x2821A };
@@ -330,11 +327,9 @@ namespace SKSEVRHooks
 			newCompareCheck.ready();
 			int fillRange = jmpBack - target;
 			REL::safe_fill(target, REL::NOP, fillRange);
-			auto& trampoline = SKSE::GetTrampoline();
-			trampoline.create(newCompareCheck.getSize(), (void*)target);
-			auto result = trampoline.allocate(newCompareCheck);
+			auto result = a_trampoline->allocate(newCompareCheck);
 			logger::info("Core_RevertCallbackHook hookin {:x} to jmp to {:x} with base {:x}", target, (std::uintptr_t)result, a_base);
-			trampoline.write_branch<5>(target, result);
+			a_trampoline->write_branch<5>(target, result);
 
 			logger::info("Core_RevertCallbackHook hooked at address SKSEVR::{:x}", target);
 			logger::info("Core_RevertCallbackHook hooked at offset SKSEVR::{:x}", target);
@@ -371,8 +366,17 @@ namespace SKSEVRHooks
 
 			logger::info("SKSEVR {} patched"sv, patch.name);
 		}
-		Core_LoadCallback_Switch::Install(sksevr_base);
-		//Core_RevertCallbackHook::Install(sksevr_base); // This is broken currently,
+
+		// Allocate space near the module's address for all of our assembly hooks to go into
+		// Each hook has to be within 2 GB of the trampoline space for the REL 32-bit jmps to work
+		// The trampoline logic checks for first available region to allocate from 2 GB below addr to 2 GB above addr
+		// So we add a gigabyte to ensure the entire DLL is within 2 GB of the allocated region
+		constexpr std::size_t gigabyte = static_cast<std::size_t>(1) << 30;
+		auto SKSEVRTrampoline = new SKSE::Trampoline();
+		SKSEVRTrampoline->create(0x100, (void*)(sksevr_base + gigabyte));
+
+		Core_LoadCallback_Switch::Install(sksevr_base, SKSEVRTrampoline);
+		Core_RevertCallbackHook::Install(sksevr_base, SKSEVRTrampoline);
 		ResolveFormIdHook::Install(sksevr_base);
 		ResolveHandleHook::Install(sksevr_base);
 	}

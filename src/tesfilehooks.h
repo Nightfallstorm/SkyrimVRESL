@@ -11,10 +11,7 @@ namespace tesfilehooks
 	// We use an array to mimic this for VR
 	static void PopulateFilesArray(bool includeOverlay)
 	{
-		auto& fileArray = filesArray;
-		if (includeOverlay) {  // Overlays aren't in compiled file list, so they get special treatment
-			fileArray = filesArrayOverlay;
-		}
+		auto& fileArray = includeOverlay ? filesArrayOverlay : filesArray;
 		auto handler = DataHandler::GetSingleton();
 		if (fileArray.empty() ||
 			fileArray.size() != handler->compiledFileCollection.files.size() + handler->compiledFileCollection.smallFiles.size()) {
