@@ -34,6 +34,11 @@ namespace startuphooks
 			handler->loadedModCount++;
 		}
 #endif
+		if (isOverlay(a_file)) {
+			logger::debug("Adding {} as an overlay plugin", a_file->fileName);
+			fileCollection.overlayFiles.push_back(a_file);
+			return;
+		}
 
 		if (a_file->IsLight()) {
 			fileCollection.smallFiles.push_back(a_file);
@@ -42,6 +47,10 @@ namespace startuphooks
 			a_file->flags |= 0xFE << 24;
 			a_file->compileIndex = 0xFE;
 			a_file->smallFileCompileIndex = smallFileCompileIndex;
+			if (smallFileCompileIndex > 0xFFF) {
+				auto msg = std::format("ESL plugin {} was added beyond the ESL range! Reduce the number of ESL plugins in your load order to fix this", a_file->fileName);
+				stl::report_and_fail(msg);
+			}
 		} else {
 			fileCollection.files.push_back(a_file);
 			auto fileCompileIndex = fileCollection.files.size() - 1;
@@ -49,6 +58,10 @@ namespace startuphooks
 			a_file->flags |= fileCompileIndex << 24;
 			a_file->compileIndex = fileCompileIndex;
 			a_file->smallFileCompileIndex = 0;
+			if (fileCompileIndex >= 0xFE) {
+				auto msg = std::format("Regular plugin {} was added beyond the ESP range. This will overflow with ESLs and break the game! Reduce the number of regular plugins in the load order to fix this", a_file->fileName);
+				stl::report_and_fail(msg);
+			}
 		}
 		logger::debug("AddFile finished");
 	}
@@ -267,8 +280,10 @@ namespace startuphooks
 			// Replica of what SE does, but for VR
 			auto handler = DataHandler::GetSingleton();
 			bool firstPlugin = true;
+			auto& overlayFiles = DataHandler::GetSingleton()->compiledFileCollection.overlayFiles;
 			for (auto file : handler->files) {
-				if (file->compileIndex != 0xFF && file != handler->activeFile) {
+				boolean isCompiledOverlay = std::find(overlayFiles.begin(), overlayFiles.end(), file) != overlayFiles.end();
+				if ((isCompiledOverlay || file->compileIndex != 0xFF) && file != handler->activeFile) {
 					logger::info("ConstructObjectListThunk on file {} {:x}", std::string(file->fileName), file->compileIndex);
 					ConstructObjectList(handler, file, firstPlugin);
 					firstPlugin = false;

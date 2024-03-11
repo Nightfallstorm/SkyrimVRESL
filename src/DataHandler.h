@@ -14,6 +14,27 @@
 
 using namespace RE;
 
+struct TESOverlayFileCollection : RE::TESFileCollection
+{
+	BSTArray<TESFile*> overlayFiles;  // 20
+};
+
+static inline std::uint32_t overlayBit = 1 << 20;
+
+static inline void setOverlay(RE::TESFile* a_file)
+{
+	auto recordFlagsAddr = reinterpret_cast<std::uintptr_t>(a_file) + offsetof(RE::TESFile, recordFlags);
+	auto recordFlags = reinterpret_cast<int*>(recordFlagsAddr);
+	auto newFlags = a_file->recordFlags.underlying() | overlayBit;
+	*recordFlags = newFlags;
+}
+
+static inline bool isOverlay(RE::TESFile* a_file)
+{
+	int isOverlay = a_file->recordFlags.underlying() & overlayBit;
+	return isOverlay != 0;
+}
+
 class DataHandler : public
 #ifndef BACKWARDS_COMPATIBLE
 					BSTSingletonSDM<DataHandler>
@@ -42,7 +63,7 @@ public:
 	TESFile* activeFile;                                               // D58
 	BSSimpleList<TESFile*> files;                                      // D60
 																	   // ~~~~~~~~~~~~~~~~~ below member differs from VR~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	TESFileCollection compiledFileCollection;                          // D70
+	TESOverlayFileCollection compiledFileCollection;                   // D70
 	std::uint64_t fakeVRpadding[0xFA];                                 // D78
 																	   /*
 * 		std::uint32_t         loadedModCount;     // D70
@@ -67,9 +88,9 @@ public:
 static_assert(sizeof(DataHandler) == 0x1590);
 static_assert(offsetof(DataHandler, masterSave) == 0x1570);
 #else
-	TESFileCollection compiledFileCollection;  // 1590
+	TESOverlayFileCollection compiledFileCollection;  // 1590
 };
-static_assert(sizeof(DataHandler) == 0x15C0);
+static_assert(sizeof(DataHandler) == 0x15D8);
 static_assert(offsetof(DataHandler, compiledFileCollection) == 0x1590);
 #endif
 

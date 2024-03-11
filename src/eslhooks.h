@@ -47,6 +47,9 @@ namespace eslhooks
 			if (flags & 0x200) {
 				a_self->recordFlags.set(FileFlag::kSmallFile);
 			}
+			if (flags & overlayBit) {
+				setOverlay(a_self);
+			}
 
 			auto fileName = std::string(a_self->fileName);
 			if (fileName.ends_with("esm")) {
@@ -92,6 +95,10 @@ namespace eslhooks
 		{
 			logger::trace("Adjust form {:x} for file {} (isLight: {})", a_formID, std::string(a_file->fileName), a_file->IsLight());
 
+			if (isOverlay(a_file)) {
+				auto errorMsg = std::format("Attempted to set formID {:x} to overlay file {}. This is a broken plugin!! Remove the new record or contact the mod author", a_formID, a_file->fileName);
+				stl::report_and_fail(errorMsg);
+			}
 			a_formID &= 0xFFFFFFu;  // Strip file index, now 0x00XXXXXX;
 			std::uint32_t a_fileIndex = 0;
 			if (a_file->IsLight()) {
