@@ -29,18 +29,18 @@ public:
 
 	std::uint64_t fakeVRPadding[0x3A];
 	// ~~~~~~~~~~~~~~~~~ end VR difference ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	BGSSaveLoadFormIDMap worldspaceFormIDMap;                           // 200
-	BSTHashMap<FormID, ActorHandle> unk98;                              // 268
-	BGSSaveLoadReferencesMap unkC8;                                     // 298
-	BSTHashMap<FormID, FormID> unk158;                                  // 328
-	BGSConstructFormsInAllFilesMap reconstructFormsMap;                 // 358
-	BGSSaveLoadQueuedSubBufferMap queuedSubBuffersMap;                  // 3D8
-	BGSSaveLoadFormIDMap formIDMap;                                     // 468
-	BSTArray<void*> saveLoadHistory;                                    // 4D0
-	BSTArray<void*> unk318;                                             // 4E8
-	BGSSaveLoadChangesMap* saveLoadChanges;                             // 500
-	std::uint64_t unk338;                                               // 508
-	stl::enumeration<RE::BGSSaveLoadGame::Flags, std::uint32_t> flags;  // 510
-	std::uint8_t currentMinorVersion;                                   // 514
+	BGSSaveLoadFormIDMap worldspaceFormIDMap;                             // 200
+	BSTHashMap<FormID, ActorHandle> unk98;                                // 268
+	BGSSaveLoadReferencesMap unkC8;                                       // 298
+	BSTHashMap<FormID, FormID> unk158;                                    // 328
+	BGSConstructFormsInAllFilesMap reconstructFormsMap;                   // 358
+	BGSSaveLoadQueuedSubBufferMap queuedSubBuffersMap;                    // 3D8
+	BGSSaveLoadFormIDMap formIDMap;                                       // 468
+	BSTArray<void*> saveLoadHistory;                                      // 4D0
+	BSTArray<void*> unk318;                                               // 4E8
+	BGSSaveLoadChangesMap* saveLoadChanges;                               // 500
+	std::uint64_t unk338;                                                 // 508
+	REX::EnumSet<RE::BGSSaveLoadGame::GlobalFlags, std::uint32_t> flags;  // 510
+	std::uint8_t currentMinorVersion;                                     // 514
 };
 static_assert(sizeof(SaveLoadGame) == 0x518);
