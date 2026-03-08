@@ -1,5 +1,6 @@
 #pragma once
 #include "DataHandler.h"
+#include <chrono>
 #include <detours/detours.h>
 
 namespace startuphooks
@@ -231,21 +232,29 @@ namespace startuphooks
 
 		static void OpenTESLoopThunk()
 		{
-			logger::info("OpenTESLoop invoked!");
-			// Replica of what SE does, but for VR
+			logger::debug("OpenTESLoop invoked!");
+			// Replica of what SE does, but for VR.
 			auto handler = DataHandler::GetSingleton();
 			int* totalForms = reinterpret_cast<int*>(iTotalForms.address());
 			for (auto file : handler->compiledFileCollection.files) {
-				logger::info("OpenTESLoop opening file! {} {:x}", std::string(file->fileName), file->compileIndex);
+				logger::debug("OpenTESLoop opening file! {} {:x}", std::string(file->fileName), file->compileIndex);
+				const auto t0 = std::chrono::high_resolution_clock::now();
 				file->OpenTES(RE::NiFile::OpenMode::kReadOnly, 0);
+				const auto t1 = std::chrono::high_resolution_clock::now();
+				RecordPluginOpenTiming(file,
+					static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count()));
 				*totalForms += file->unk430;
 			}
 			for (auto file : handler->compiledFileCollection.smallFiles) {
-				logger::info("OpenTESLoop opening small file! {} {:x}", std::string(file->fileName), file->compileIndex);
+				logger::debug("OpenTESLoop opening small file! {} {:x}", std::string(file->fileName), file->compileIndex);
+				const auto t0 = std::chrono::high_resolution_clock::now();
 				file->OpenTES(RE::NiFile::OpenMode::kReadOnly, 0);
+				const auto t1 = std::chrono::high_resolution_clock::now();
+				RecordPluginOpenTiming(file,
+					static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count()));
 				*totalForms += file->unk430;
 			}
-			logger::info("OpenTESLoop finished!");
+			logger::debug("OpenTESLoop finished!");
 		}
 
 		static void InstallOpenTESLoop()
@@ -273,7 +282,7 @@ namespace startuphooks
 
 		static void ConstructObjectListThunk()
 		{
-			logger::info("ConstructObjectListThunk invoked!");
+			logger::debug("ConstructObjectListThunk invoked!");
 			// Replica of what SE does, but for VR
 			auto handler = DataHandler::GetSingleton();
 			bool firstPlugin = true;
@@ -281,19 +290,27 @@ namespace startuphooks
 			for (auto file : handler->files) {
 				boolean isCompiledOverlay = std::find(overlayFiles.begin(), overlayFiles.end(), file) != overlayFiles.end();
 				if ((isCompiledOverlay || file->compileIndex != 0xFF) && file != handler->activeFile) {
-					logger::info("ConstructObjectListThunk on file {} {:x}", std::string(file->fileName), file->compileIndex);
+					logger::debug("ConstructObjectListThunk on file {} {:x}", std::string(file->fileName), file->compileIndex);
+					const auto t0 = std::chrono::high_resolution_clock::now();
 					ConstructObjectList(handler, file, firstPlugin);
+					const auto t1 = std::chrono::high_resolution_clock::now();
+					RecordPluginLoadTiming(file,
+						static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count()));
 					firstPlugin = false;
 				}
 			}
 			if (handler->activeFile) {
-				logger::info("ConstructObjectListThunk on active file {} {:x}",
+				logger::debug("ConstructObjectListThunk on active file {} {:x}",
 					std::string(handler->activeFile->fileName),
 					handler->activeFile->compileIndex);
+				const auto t0 = std::chrono::high_resolution_clock::now();
 				ConstructObjectList(handler, handler->activeFile, firstPlugin);
+				const auto t1 = std::chrono::high_resolution_clock::now();
+				RecordPluginLoadTiming(handler->activeFile,
+					static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count()));
 				firstPlugin = false;
 			}
-			logger::info("ConstructObjectListThunk finished!");
+			logger::debug("ConstructObjectListThunk finished!");
 		}
 
 		static void InstallConstructObjectListLoop()

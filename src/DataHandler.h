@@ -94,6 +94,15 @@ static_assert(sizeof(DataHandler) == 0x15D8);
 static_assert(offsetof(DataHandler, compiledFileCollection) == 0x1590);
 #endif
 
+// Records a single ConstructObjectList timing for a plugin.
+// Called from ConstructObjectListThunk; accumulates by filename.
+void RecordPluginLoadTiming(RE::TESFile* file, uint64_t durationNs);
+
+// Records the OpenTES (file open+read) duration for a plugin.
+// Called from OpenTESLoopThunk; exposed via ISkyrimVRESLInterface002::GetPluginLoadTimings
+// as openNs. VRESL's NOP sled at CompileFiles replaces the original call site.
+void RecordPluginOpenTiming(RE::TESFile* file, uint64_t openNs);
+
 namespace SkyrimVRESLPluginAPI
 {
 	// Handles skse mod messages requesting to fetch API functions from SkyrimVRESL
@@ -109,8 +118,17 @@ namespace SkyrimVRESLPluginAPI
 		const RE::TESFileCollection* GetCompiledFileCollection();
 	};
 
+	// This object provides access to SkyrimVRESL's mod support API version 2
+	struct SkyrimVRESLInterface002 : ISkyrimVRESLInterface002
+	{
+		unsigned int GetBuildNumber() override;
+		const RE::TESFileCollection* GetCompiledFileCollection() override;
+		const VRESLPluginLoadTiming* GetPluginLoadTimings(uint32_t* outCount) const override;
+	};
+
 }  // namespace SkyrimVRESLPluginAPI
 extern SkyrimVRESLPluginAPI::SkyrimVRESLInterface001 g_interface001;
+extern SkyrimVRESLPluginAPI::SkyrimVRESLInterface002 g_interface002;
 
 // Function that tests GetCompiledFileCollectionExtern() and prints to log.
 // This is also an example of how to use GetHandle and GetProc
