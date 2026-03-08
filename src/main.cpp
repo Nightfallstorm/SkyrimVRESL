@@ -139,6 +139,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	SKSE::Init(a_skse);
 	auto messaging = SKSE::GetMessagingInterface();
 	messaging->RegisterListener(MessageHandler);
+	SKSE::AllocTrampoline(1 << 10);
 	tesfilehooks::InstallHooks();
 	startuphooks::InstallHooks();
 	saveloadhooks::InstallHooks();

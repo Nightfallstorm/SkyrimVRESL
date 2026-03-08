@@ -78,7 +78,6 @@ namespace startuphooks
 			REL::Relocation<std::uintptr_t> target{ REL::Offset(0x17DFF0) };
 
 			auto& trampoline = SKSE::GetTrampoline();
-			SKSE::AllocTrampoline(14);
 			trampoline.write_branch<5>(target.address(), AddFileThunk);
 			logger::info("Install AddFile hook at {:x}", target.address());
 			logger::info("Install AddFile hook at offset {:x}", target.offset());
@@ -207,10 +206,8 @@ namespace startuphooks
 			auto trampolineJmp = TrampolineCall(end);
 
 			auto& trampoline = SKSE::GetTrampoline();
-			SKSE::AllocTrampoline(trampolineJmp.getSize());
 			auto result = trampoline.allocate(trampolineJmp);
 			auto& trampoline2 = SKSE::GetTrampoline();
-			SKSE::AllocTrampoline(14);
 			trampoline2.write_branch<5>(start, (std::uintptr_t)result);
 
 			logger::info("Install LoadFilesHook hook at address {:x}", start);
@@ -371,7 +368,6 @@ namespace startuphooks
 			static void Install()
 			{
 				auto& trampoline = SKSE::GetTrampoline();
-				SKSE::AllocTrampoline(14);
 
 				trampoline.write_call<6>(target.address() + 0x8F, EslExtensionCheck);
 				logger::info("PrepareBSAHook hooked at {:x}", target.address() + 0x8F);
@@ -386,7 +382,6 @@ namespace startuphooks
 			static void Install()
 			{
 				auto& trampoline = SKSE::GetTrampoline();
-				SKSE::AllocTrampoline(14);
 
 				trampoline.write_call<6>(target.address() + 0x74, EslExtensionCheck);
 				logger::info("UnkUIModHook hooked at {:x}", target.address() + 0x74);
@@ -470,7 +465,6 @@ namespace startuphooks
 			static void Install()
 			{
 				auto& trampoline = SKSE::GetTrampoline();
-				SKSE::AllocTrampoline(14);
 
 				trampoline.write_call<6>(target.address() + 0x1BA, EslExtensionCheck);
 				logger::info("UnkSetCheckHook hooked at {:x}", target.address() + 0x1BA);
