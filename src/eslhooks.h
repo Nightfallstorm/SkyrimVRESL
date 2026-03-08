@@ -156,9 +156,7 @@ namespace eslhooks
 
 				auto trampolineJmp = TrampolineCall(end, stl::unrestricted_cast<std::uintptr_t>(GetFormFromFile));
 				auto& trampoline = SKSE::GetTrampoline();
-				SKSE::AllocTrampoline(trampolineJmp.getSize());
 				auto result = trampoline.allocate(trampolineJmp);
-				SKSE::AllocTrampoline(14);
 				trampoline.write_branch<5>(start, (std::uintptr_t)result);
 			}
 		};
@@ -200,9 +198,7 @@ namespace eslhooks
 
 				auto trampolineJmp = TrampolineCall(end, stl::unrestricted_cast<std::uintptr_t>(AdjustFormID));
 				auto& trampoline = SKSE::GetTrampoline();
-				SKSE::AllocTrampoline(trampolineJmp.getSize());
 				auto result = trampoline.allocate(trampolineJmp);
-				SKSE::AllocTrampoline(14);
 				trampoline.write_branch<5>(start, (std::uintptr_t)result);
 			}
 		};
@@ -269,9 +265,7 @@ namespace eslhooks
 
 				auto trampolineJmp = TrampolineCall(end, stl::unrestricted_cast<std::uintptr_t>(AdjustFormID));
 				auto& trampoline = SKSE::GetTrampoline();
-				SKSE::AllocTrampoline(trampolineJmp.getSize());
 				auto result = trampoline.allocate(trampolineJmp);
-				SKSE::AllocTrampoline(14);
 				trampoline.write_branch<5>(start, (std::uintptr_t)result);
 			}
 		};

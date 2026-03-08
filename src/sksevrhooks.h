@@ -20,6 +20,70 @@ namespace SKSEVRHooks
 		}
 	};
 
+	// Allocates executable memory within ±2GB of `target` by scanning for free
+	// virtual address space. Falls back to system-chosen allocation if not found.
+	static void* AllocNear(std::uintptr_t target, std::size_t size)
+	{
+		SYSTEM_INFO si;
+		GetSystemInfo(&si);
+		const std::uintptr_t gran = si.dwAllocationGranularity;
+
+		// ±2 GB window, clamped to valid address space
+		const std::uintptr_t lo = (target > 0x7FFF0000ULL) ? target - 0x7FFF0000ULL : 0;
+		const std::uintptr_t hi = (target + 0x7FFF0000ULL > target) ? target + 0x7FFF0000ULL : UINTPTR_MAX;
+
+		MEMORY_BASIC_INFORMATION mbi;
+
+		// Search forward from target
+		for (std::uintptr_t addr = (target + gran - 1) & ~(gran - 1); addr < hi;) {
+			if (!VirtualQuery(reinterpret_cast<void*>(addr), &mbi, sizeof(mbi)))
+				break;
+			if (mbi.State == MEM_FREE) {
+				if (void* p = VirtualAlloc(reinterpret_cast<void*>(addr), size,
+						MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE))
+					return p;
+			}
+			addr = reinterpret_cast<std::uintptr_t>(mbi.BaseAddress) + mbi.RegionSize;
+			addr = (addr + gran - 1) & ~(gran - 1);
+		}
+
+		// Search backward from target
+		for (std::uintptr_t addr = target & ~(gran - 1); addr > lo; addr -= gran) {
+			if (!VirtualQuery(reinterpret_cast<void*>(addr), &mbi, sizeof(mbi)))
+				break;
+			if (mbi.State == MEM_FREE) {
+				if (void* p = VirtualAlloc(reinterpret_cast<void*>(addr), size,
+						MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE))
+					return p;
+			}
+		}
+
+		logger::warn("SKSEVRHooks::AllocNear: no free region found within 2GB of {:x}; falling back", target);
+		return VirtualAlloc(nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+	}
+
+	// Writes the Xbyak code `gen` to memory allocated near `target`, then patches
+	// `target` with a 5-byte relative JMP to that memory. The region is kept alive
+	// for the lifetime of the process (no free — it holds live code).
+	static void WriteNearBranch(std::uintptr_t target, Xbyak::CodeGenerator& gen)
+	{
+		gen.ready();
+		const std::size_t sz = gen.getSize();
+		void* stub = AllocNear(target, sz);
+		if (!stub) {
+			logger::critical("SKSEVRHooks::WriteNearBranch: allocation failed for target {:x}", target);
+			return;
+		}
+		std::memcpy(stub, gen.getCode(), sz);
+		FlushInstructionCache(GetCurrentProcess(), stub, sz);
+
+		const std::int32_t rel = static_cast<std::int32_t>(
+			reinterpret_cast<std::intptr_t>(stub) - static_cast<std::intptr_t>(target + 5));
+		const std::uint8_t jmpByte = 0xE9;
+		REL::safe_write(target, &jmpByte, 1);
+		REL::safe_write(target + 1, &rel, 4);
+	}
+
 	void EraseMap()
 	{
 		s_savedModIndexMap.clear();
@@ -279,24 +343,16 @@ namespace SKSEVRHooks
 			L(funcLabel);
 			dq(func);
 		}
-		// Install our hook at the specified address
-
-		static inline void Install(std::uintptr_t a_base, SKSE::Trampoline* a_trampoline)
+		static inline void Install(std::uintptr_t a_base)
 		{
 			std::uintptr_t target{ a_base + 0x28580 };
 			std::uintptr_t beginSwitch{ a_base + 0x2858A };
 			std::uintptr_t endSwitch{ a_base + 0x28753 };
 
 			auto newCompareCheck = Core_LoadCallback_Switch(beginSwitch, endSwitch);
-			newCompareCheck.ready();
-			int fillRange = beginSwitch - target;
-			REL::safe_fill(target, REL::NOP, fillRange);
-			auto result = a_trampoline->allocate(newCompareCheck);
-			logger::info("Core_LoadCallback_switch hookin {:x} to jmp to {:x} with base {:x}", target, (std::uintptr_t)result, a_base);
-			a_trampoline->write_branch<5>(target, result);
-
-			logger::info("Core_LoadCallback_Switch hooked at address SKSEVR::{:x}", target);
-			logger::info("Core_LoadCallback_Switch hooked at offset SKSEVR::{:x}", target);
+			REL::safe_fill(target, REL::NOP, beginSwitch - target);
+			WriteNearBranch(target, newCompareCheck);
+			logger::info("Core_LoadCallback_Switch hooked at SKSEVR+{:x}", target - a_base);
 		}
 	};
 
@@ -317,22 +373,15 @@ namespace SKSEVRHooks
 			dq(func);
 		}
 
-		// Install our hook at the specified address
-		static inline void Install(std::uintptr_t a_base, SKSE::Trampoline* a_trampoline)
+		static inline void Install(std::uintptr_t a_base)
 		{
 			std::uintptr_t target{ a_base + 0x28210 };
 			std::uintptr_t jmpBack{ a_base + 0x2821A };
 
 			auto newCompareCheck = Core_RevertCallbackHook(jmpBack);
-			newCompareCheck.ready();
-			int fillRange = jmpBack - target;
-			REL::safe_fill(target, REL::NOP, fillRange);
-			auto result = a_trampoline->allocate(newCompareCheck);
-			logger::info("Core_RevertCallbackHook hookin {:x} to jmp to {:x} with base {:x}", target, (std::uintptr_t)result, a_base);
-			a_trampoline->write_branch<5>(target, result);
-
-			logger::info("Core_RevertCallbackHook hooked at address SKSEVR::{:x}", target);
-			logger::info("Core_RevertCallbackHook hooked at offset SKSEVR::{:x}", target);
+			REL::safe_fill(target, REL::NOP, jmpBack - target);
+			WriteNearBranch(target, newCompareCheck);
+			logger::info("Core_RevertCallbackHook hooked at SKSEVR+{:x}", target - a_base);
 		}
 	};
 
@@ -367,16 +416,8 @@ namespace SKSEVRHooks
 			logger::info("SKSEVR {} patched"sv, patch.name);
 		}
 
-		// Allocate space near the module's address for all of our assembly hooks to go into
-		// Each hook has to be within 2 GB of the trampoline space for the REL 32-bit jmps to work
-		// The trampoline logic checks for first available region to allocate from 2 GB below addr to 2 GB above addr
-		// So we add a gigabyte to ensure the entire DLL is within 2 GB of the allocated region
-		constexpr std::size_t gigabyte = static_cast<std::size_t>(1) << 30;
-		auto SKSEVRTrampoline = new SKSE::Trampoline();
-		SKSEVRTrampoline->create(0x100, (void*)(sksevr_base + gigabyte));
-
-		Core_LoadCallback_Switch::Install(sksevr_base, SKSEVRTrampoline);
-		Core_RevertCallbackHook::Install(sksevr_base, SKSEVRTrampoline);
+		Core_LoadCallback_Switch::Install(sksevr_base);
+		Core_RevertCallbackHook::Install(sksevr_base);
 		ResolveFormIdHook::Install(sksevr_base);
 		ResolveHandleHook::Install(sksevr_base);
 	}

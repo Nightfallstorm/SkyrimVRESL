@@ -50,7 +50,7 @@ cmake --build buildvr --config Release
 [GPL-3.0-or-later](LICENSE) WITH [Modding Exception AND GPL-3.0 Linking Exception (with Corresponding Source)](EXCEPTIONS.md).  
 Specifically, the Modded Code is Skyrim (and its variants) and Modding Libraries include [SKSE](https://skse.silverlock.org/) and Commonlib (and variants).
 
-Use of the [SkyrimVRESLAPI.h](cmake/ports/SkyrimVRESL/SkyrimVRESLAPI.h) and [SkyrimVRESLAPI.cpp](cmake/ports/SkyrimVRESL/SkyrimVRESLAPI.cpp) is under [MIT](https://opensource.org/license/mit/). In other words, using the SKSE messaging interface to call this dll's published API will not require application of the GPL-3.0 terms to the calling dll. In addition, using SKSEVR or CommonLib with SkyrimVRESL support will not require application of the GPL-3.0 terms.
+Use of the API headers ([SkyrimVRESLAPI.h](src/SkyrimVRESLAPI.h), [SkyrimVRESLAPI.cpp](src/SkyrimVRESLAPI.cpp), [SkyrimVRESLAPI_SKSE.h](src/SkyrimVRESLAPI_SKSE.h), [SkyrimVRESLAPI_SKSE.cpp](src/SkyrimVRESLAPI_SKSE.cpp)) is under [MIT](https://opensource.org/license/mit/). In other words, using the SKSE messaging interface to call this dll's published API will not require application of the GPL-3.0 terms to the calling dll. In addition, using SKSEVR or CommonLib with SkyrimVRESL support will not require application of the GPL-3.0 terms.
 
 ## Credits
 
@@ -63,3 +63,14 @@ Skyrim modding is built on the community. While there are too many to count, we 
 ## Developer Use
 
 See [Wiki](https://github.com/Nightfallstorm/SkyrimVRESL/wiki/Developers)
+
+### API
+
+Copy `SkyrimVRESLAPI.h` + `SkyrimVRESLAPI.cpp` (CommonLib) or `SkyrimVRESLAPI_SKSE.h` + `SkyrimVRESLAPI_SKSE.cpp` (legacy SKSE64 SDK) into your project. No link-time dependency on SkyrimVRESL is required — the interface is retrieved at runtime via SKSE's messaging system.
+
+**ISkyrimVRESLInterface001** — `GetSkyrimVRESLInterface001()`
+- `GetBuildNumber()` — VRESL build number
+- `GetCompiledFileCollection()` — SSE-compatible `TESFileCollection` (populated after `kDataLoaded`)
+
+**ISkyrimVRESLInterface002** — `GetSkyrimVRESLInterface002()` (extends 001)
+- `GetPluginLoadTimings(uint32_t* outCount)` — array of `VRESLPluginLoadTiming`, one entry per plugin, with `totalNs` (ConstructObjectList) and `openNs` (OpenTES / file I/O) durations. Stable for the lifetime of the DLL; call after `kDataLoaded`.
