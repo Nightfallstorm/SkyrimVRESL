@@ -1,20 +1,30 @@
-# header-only library
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO Nightfallstorm/SkyrimVRESL
-    REF f6ad4eb592583f848a34afb46e75277db4d159fb
-    SHA512 4bb8e37a983962a4f23301a908d785c7783228d1325fd5a490c75993fc8b052ef63c9d83c50331db5434e07eef93aa2f77f4b4e27404adbe509243bfd4820e6a
+    REF 128a8399a7c3dc92206426a69fb6bbd32af2e1d1
+    SHA512 de91249453579685065ec8f7586a72ee353471a387482b9fab17d557c50233f22a2732022e3e846876f7dea8e13ef5e5050c00b4692088d428c8833c6bdf0769
     HEAD_REF main
 )
 
-# Install codes
-set(SKYRIMVRESLAPI_SOURCE
-    ${SOURCE_PATH}/src/SkyrimVRESLAPI.cpp
-    ${SOURCE_PATH}/src/SkyrimVRESLAPI.h
-    ${SOURCE_PATH}/src/SkyrimVRESLAPI_SKSE.cpp
-    ${SOURCE_PATH}/src/SkyrimVRESLAPI_SKSE.h
-)
+# CommonLib API header (default) — goes to include/ for normal #include <SkyrimVRESLAPI.h>
+file(INSTALL "${SOURCE_PATH}/src/SkyrimVRESLAPI.h"
+    DESTINATION "${CURRENT_PACKAGES_DIR}/include")
 
-file(INSTALL ${SKYRIMVRESLAPI_SOURCE} DESTINATION ${CURRENT_PACKAGES_DIR}/include)
+# CommonLib API source — goes to share so the CMake target can reference it via INTERFACE_SOURCES
+file(INSTALL "${SOURCE_PATH}/src/SkyrimVRESLAPI.cpp"
+    DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}/src")
 
-file(INSTALL ${SOURCE_PATH}/LICENSE DESTINATION ${CURRENT_PACKAGES_DIR}/share/${PORT} RENAME copyright)
+# Legacy SKSE64 SDK variant (optional feature)
+if("legacy" IN_LIST FEATURES)
+    file(INSTALL "${SOURCE_PATH}/src/SkyrimVRESLAPI_SKSE.h"
+        DESTINATION "${CURRENT_PACKAGES_DIR}/include")
+    file(INSTALL "${SOURCE_PATH}/src/SkyrimVRESLAPI_SKSE.cpp"
+        DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}/src")
+endif()
+
+# CMake package config — defines SkyrimVRESL::CommonLib and (optionally) SkyrimVRESL::SKSE
+file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/skyrimvresl-config.cmake"
+    DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}")
+
+file(INSTALL "${SOURCE_PATH}/LICENSE"
+    DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}" RENAME copyright)
