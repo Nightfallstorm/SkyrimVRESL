@@ -277,6 +277,13 @@ if(PACKAGE)
 			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> "${ZIP_DIR}/SKSE/Plugins/")
 	endif()
 
+	# include scripts directory in the package
+	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+			"${CMAKE_CURRENT_SOURCE_DIR}/src/Scripts"
+			"${ZIP_DIR}/Scripts/"
+	)
+
 	set(TARGET_ZIP "${PROJECT_NAME}_${PROJECT_VERSION}.7z")
 	message("Will zip ${ZIP_DIR} to ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_ZIP}.")
 	ADD_CUSTOM_COMMAND(
