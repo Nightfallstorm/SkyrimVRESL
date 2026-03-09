@@ -10,6 +10,9 @@ jobs:
   deploy:
     if: github.repository == 'Nightfallstorm/SkyrimVRESL'
     runs-on: ubuntu-latest
+    outputs:
+      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
+      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
 
     steps:
       - name: Wait for clang-format
@@ -42,6 +45,8 @@ jobs:
 
   update-portfile:
     needs: deploy
-    if: needs.deploy.result == 'success'
+    if: needs.deploy.outputs.new_release_published == 'true'
     uses: ./.github/workflows/update_portfile.yml
+    with:
+      tag: v${{ needs.deploy.outputs.new_release_version }}
     secrets: inherit
