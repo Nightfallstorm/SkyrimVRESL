@@ -1,0 +1,48 @@
+name: update_portfile
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to update portfile for (defaults to latest tag)'
+        required: false
+        default: ''
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Tag to update portfile for'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  update-portfile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update portfile
+        run: |
+          TAG="${{ inputs.tag }}"
+          bash cmake/ports/update-portfile.sh ${TAG}
+
+      - name: Commit and push
+        run: |
+          git config user.email "github-actions@github.com"
+          git config user.name "github-actions"
+          git add cmake/ports/SkyrimVRESL/portfile.cmake
+          if git diff --staged --quiet; then
+            echo "No changes to portfile — already up to date."
+          else
+            TAG=$(git describe --tags --abbrev=0)
+            git commit -m "chore: update portfile for ${TAG} [skip ci]"
+            git push
+          fi
+
+      - name: Sync dev with main
+        run: |
+          git push origin HEAD:dev --force

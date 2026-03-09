@@ -1,1 +1,12 @@
-../../../vcpkg.json
+{
+    "name": "skyrimvresl",
+    "version": "1.3.0",
+    "description": "SkyrimVRESL API headers for SKSE plugin developers. Provides CommonLib and legacy SKSE64 SDK variants.",
+    "homepage": "https://github.com/Nightfallstorm/SkyrimVRESL",
+    "license": "MIT",
+    "features": {
+        "legacy": {
+            "description": "Legacy SKSE64 SDK API variant (for mods not using CommonLib)"
+        }
+    }
+}

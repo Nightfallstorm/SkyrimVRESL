@@ -21,6 +21,14 @@ Adds ESL support to SkyrimVR.
 - [VR Address Library for SKSEVR](https://www.nexusmods.com/skyrimspecialedition/mods/58101)
   - Needed for VR
 
+## Local Development Setup
+
+After cloning, install the pre-commit hooks (requires [pre-commit](https://pre-commit.com/)):
+```
+pre-commit install
+```
+This runs `clang-format` on staged files before each commit, matching the CI format check.
+
 ## Register Visual Studio as a Generator
 
 - Open `x64 Native Tools Command Prompt`
@@ -66,7 +74,28 @@ See [Wiki](https://github.com/Nightfallstorm/SkyrimVRESL/wiki/Developers)
 
 ### API
 
-Copy `SkyrimVRESLAPI.h` + `SkyrimVRESLAPI.cpp` (CommonLib) or `SkyrimVRESLAPI_SKSE.h` + `SkyrimVRESLAPI_SKSE.cpp` (legacy SKSE64 SDK) into your project. No link-time dependency on SkyrimVRESL is required — the interface is retrieved at runtime via SKSE's messaging system.
+No link-time dependency on SkyrimVRESL is required — the interface is retrieved at runtime via SKSE's messaging system.
+
+**Option A — vcpkg overlay port (recommended)**
+
+Add the overlay port path to your `CMakePresets.json`:
+```json
+"VCPKG_OVERLAY_PORTS": "/path/to/SkyrimVRESL/cmake/ports"
+```
+Add the dependency to your `vcpkg.json`:
+```json
+{ "name": "skyrimvresl" }
+```
+For the legacy SKSE64 SDK variant add `"features": ["legacy"]`. Then in CMake:
+```cmake
+find_package(skyrimvresl CONFIG REQUIRED)
+target_link_libraries(my_plugin PRIVATE SkyrimVRESL::CommonLib)  # or SkyrimVRESL::SKSE
+```
+The API source is compiled into your plugin automatically via the CMake target.
+
+**Option B — manual copy**
+
+Copy `SkyrimVRESLAPI.h` + `SkyrimVRESLAPI.cpp` (CommonLib) or `SkyrimVRESLAPI_SKSE.h` + `SkyrimVRESLAPI_SKSE.cpp` (legacy SKSE64 SDK) directly into your project and add the `.cpp` to your source list.
 
 **ISkyrimVRESLInterface001** — `GetSkyrimVRESLInterface001()`
 - `GetBuildNumber()` — VRESL build number

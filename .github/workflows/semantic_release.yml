@@ -39,3 +39,9 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           force: true
           branch: dev
+
+  update-portfile:
+    needs: deploy
+    if: needs.deploy.result == 'success'
+    uses: ./.github/workflows/update_portfile.yml
+    secrets: inherit

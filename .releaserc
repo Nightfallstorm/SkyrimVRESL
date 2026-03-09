@@ -35,6 +35,20 @@
                 }
               ],
               "countMatches": true
+            },
+            {
+              "files": ["cmake/ports/SkyrimVRESL/vcpkg.json"],
+              "from": "\"version\": \".*\"",
+              "to": "\"version\": \"${nextRelease.version}\"",
+              "results": [
+                {
+                  "file": "cmake/ports/SkyrimVRESL/vcpkg.json",
+                  "hasChanged": true,
+                  "numMatches": 1,
+                  "numReplacements": 1
+                }
+              ],
+              "countMatches": true
             }
           ]
         }
@@ -44,7 +58,7 @@
       [
         "@semantic-release/git",
         {
-          "assets": ["CHANGELOG.md", "CMakeLists.txt", "vcpkg.json"]
+          "assets": ["CHANGELOG.md", "CMakeLists.txt", "vcpkg.json", "cmake/ports/SkyrimVRESL/vcpkg.json"]
         }
       ]
     ]
