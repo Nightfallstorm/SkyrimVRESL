@@ -264,24 +264,24 @@ if(PACKAGE)
 	set(ZIP_DIR "${CMAKE_CURRENT_BINARY_DIR}/zip")
 	add_custom_target(build-time-make-directory ALL
 		COMMAND ${CMAKE_COMMAND} -E make_directory "${ZIP_DIR}"
-		"${ZIP_DIR}/SKSE/Plugins/"
+		"${ZIP_DIR}/Data/SKSE/Plugins/"
 	)
 
 	message("Will copy mod into ${ZIP_DIR}.")
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> "${ZIP_DIR}/SKSE/Plugins/"
+		COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> "${ZIP_DIR}/Data/SKSE/Plugins/"
 	)
 
 	if(${CMAKE_BUILD_TYPE} STREQUAL Debug OR ${CMAKE_BUILD_TYPE} STREQUAL RelWithDebInfo OR ${CMAKE_BUILD_TYPE} STREQUAL Release)
 		add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> "${ZIP_DIR}/SKSE/Plugins/")
+			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> "${ZIP_DIR}/Data/SKSE/Plugins/")
 	endif()
 
 	# include scripts directory in the package
 	add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_directory
 			"${CMAKE_CURRENT_SOURCE_DIR}/src/Scripts"
-			"${ZIP_DIR}/Scripts/"
+			"${ZIP_DIR}/Data/Scripts/"
 	)
 
 	set(TARGET_ZIP "${PROJECT_NAME}_${PROJECT_VERSION}.7z")
