@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 set(NAME "skyrimvresl")
-set(VERSION 1.3.1)
+set(VERSION 1.3.2)
 
 # ---- Options ----
 option(COPY_BUILD "Copy the build output to the Skyrim directory." FALSE)
