@@ -31,7 +31,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 60
     env:
-      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+      VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/b/vcpkg-binary-cache,readwrite"
     steps:
       - name: Checkout (with submodules)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -66,14 +66,13 @@ jobs:
         run: |
           "VCPKG_INSTALLATION_ROOT=$env:VCPKG_ROOT_OUT" >> $env:GITHUB_ENV
 
-      # x-gha reads the Actions cache endpoint from these variables, which GitHub only
-      # exposes to the github-script runtime.
-      - name: Enable vcpkg GitHub Actions binary cache
-        uses: actions/github-script@v7
+      - name: Cache vcpkg binary packages
+        uses: actions/cache@v6
         with:
-          script: |
-            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
-            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+          path: ${{ github.workspace }}/b/vcpkg-binary-cache
+          key: vcpkg-bin-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}
+          restore-keys: |
+            vcpkg-bin-${{ runner.os }}-
 
       - name: Configure
         env:
