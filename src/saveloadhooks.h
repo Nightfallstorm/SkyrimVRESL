@@ -87,6 +87,7 @@ namespace saveloadhooks
 
 			saveUnk(buffer, a_unk2);
 			BGSSaveGameBufferDTOR(buffer);
+			RE::free(buffer);
 			logger::info("SaveModNames finished: regular {} light {}", fileSize, smallFileSize);
 		}
 
@@ -140,6 +141,7 @@ namespace saveloadhooks
 			std::uint32_t regularFileCount = 0;
 			std::uint32_t smallFileCount = 0;
 			buffer->LoadDataEndian(&regularFileCount, 1u, 0);  // TODO: Offset doesn't exist, we should remove it
+			auto missingMods = reinterpret_cast<RE::BSTArray<RE::BSFixedString>*>(a_unk3);
 			char fileName[328]{ 0 };
 			for (std::uint32_t i = 0; i < regularFileCount; i++) {
 				BGSLoadGameBufferReadString(buffer, fileName);
@@ -150,6 +152,9 @@ namespace saveloadhooks
 				} else {
 					logger::debug("File {} is not loaded for save", fileName);
 					a_saveloadGame->regularPluginList.push_back(nullptr);
+					if (missingMods) {
+						missingMods->push_back(fileName);
+					}
 					loadOrderValid = false;
 				}
 			}
@@ -165,12 +170,16 @@ namespace saveloadhooks
 					} else {
 						logger::debug("Small File {} is not loaded for save", fileName);
 						a_saveloadGame->smallPluginList.push_back(nullptr);
+						if (missingMods) {
+							missingMods->push_back(fileName);
+						}
 						loadOrderValid = false;
 					}
 				}
 			}
 
 			BGSLoadGameBufferDTOR(buffer);
+			RE::free(buffer);
 			logger::info("LoadMods finished: regular {} light {}", regularFileCount, smallFileCount);
 			return loadOrderValid;
 		}

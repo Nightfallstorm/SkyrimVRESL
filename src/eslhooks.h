@@ -369,14 +369,24 @@ namespace eslhooks
 	namespace isesl
 	{
 
+		static RE::FormID StripPluginIndex(RE::FormID a_formID, const char* a_fileName)
+		{
+			auto form = RE::TESForm::LookupByID(a_formID);
+			const RE::TESFile* file = form ? form->GetFile(0) : nullptr;
+			if (!file && a_fileName && a_fileName[0]) {
+				file = RE::TESDataHandler::GetSingleton()->LookupModByName(a_fileName);
+			}
+			const bool isLight = file ? file->IsLight() : ((a_formID >> 24) == 0xFE);
+			return isLight ? (a_formID & 0xFFF) : (a_formID & 0xFFFFFF);
+		}
+
 		struct GetFactTintHook
 		{
 			static inline REL::Relocation<std::uintptr_t> target{ REL::Offset(0x36FB70) };
 
 			static void thunk(char* const buffer, const size_t a_size, const char* a_format, char a_fileName[], RE::FormID a_formID)
 			{
-				auto file = RE::TESForm::LookupByID(a_formID)->GetFile(0);
-				auto formID = file->IsLight() ? a_formID & 0xFFF : a_formID & 0xFFFFFF;
+				auto formID = StripPluginIndex(a_formID, a_fileName);
 				return func(buffer, a_size, a_format, a_fileName, formID);
 			}
 
@@ -397,8 +407,7 @@ namespace eslhooks
 
 			static void thunk(char* const buffer, const size_t a_size, const char* a_format, char a_fileName[], RE::FormID a_formID)
 			{
-				auto file = RE::TESForm::LookupByID(a_formID)->GetFile(0);
-				auto formID = file->IsLight() ? a_formID & 0xFFF : a_formID & 0xFFFFFF;
+				auto formID = StripPluginIndex(a_formID, a_fileName);
 				return func(buffer, a_size, a_format, a_fileName, formID);
 			}
 
@@ -419,8 +428,7 @@ namespace eslhooks
 
 			static void thunk(char* const buffer, const size_t a_size, const char* a_format, char a_fileName[], RE::FormID a_formID)
 			{
-				auto file = RE::TESForm::LookupByID(a_formID)->GetFile(0);
-				auto formID = file->IsLight() ? a_formID & 0xFFF : a_formID & 0xFFFFFF;
+				auto formID = StripPluginIndex(a_formID, a_fileName);
 				return func(buffer, a_size, a_format, a_fileName, formID);
 			}
 
@@ -441,8 +449,7 @@ namespace eslhooks
 
 			static void thunk(char* const buffer, const size_t a_size, const char* a_format, char a_fileName[], RE::FormID a_formID)
 			{
-				auto file = RE::TESForm::LookupByID(a_formID)->GetFile(0);
-				auto formID = file->IsLight() ? a_formID & 0xFFF : a_formID & 0xFFFFFF;
+				auto formID = StripPluginIndex(a_formID, a_fileName);
 				return func(buffer, a_size, a_format, a_fileName, formID);
 			}
 
@@ -463,8 +470,7 @@ namespace eslhooks
 
 			static void thunk(char* const buffer, const size_t a_size, const char* a_format, char a_unk[], RE::FormID a_formID, int a_unk2)
 			{
-				auto file = RE::TESForm::LookupByID(a_formID)->GetFile(0);
-				auto formID = file->IsLight() ? a_formID & 0xFFF : a_formID & 0xFFFFFF;
+				auto formID = StripPluginIndex(a_formID, a_unk);
 				return func(buffer, a_size, a_format, a_unk, formID, a_unk2);
 			}
 
