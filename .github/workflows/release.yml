@@ -174,5 +174,4 @@ jobs:
       mod_filename: SkyrimVRESL
       file_description: Adds ESL support to SkyrimVR.
     secrets:
-      UNEX_NEXUSMODS_SESSION_COOKIE: ${{ secrets.UNEX_NEXUSMODS_SESSION_COOKIE }}
       UNEX_APIKEY: ${{ secrets.UNEX_APIKEY }}
