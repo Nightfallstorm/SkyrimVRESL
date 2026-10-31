@@ -1,0 +1,32 @@
+# Manual Nexus upload of an already-published release, e.g. to retry a failed upload or to
+# dry-run one. The release pipeline calls the same shared workflow after each release.
+name: "Nexus: Upload Release"
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Published stable release tag to upload (vX.Y.Z)."
+        required: true
+      dry_run:
+        description: "If true, only report the planned upload; never upload."
+        type: choice
+        default: "true"
+        options: ["true", "false"]
+
+permissions:
+  contents: read
+
+jobs:
+  nexus:
+    if: github.repository == 'Nightfallstorm/SkyrimVRESL'
+    uses: alandtse/nexus-workflows/.github/workflows/release-nexus.yml@v1.7.0
+    with:
+      tag: ${{ inputs.tag }}
+      dry_run: ${{ inputs.dry_run }}
+      nexus_game_id: skyrimspecialedition
+      nexus_mod_id: "106712"
+      mod_filename: SkyrimVRESL
+      file_description: Adds ESL support to SkyrimVR.
+    secrets:
+      UNEX_APIKEY: ${{ secrets.UNEX_APIKEY }}

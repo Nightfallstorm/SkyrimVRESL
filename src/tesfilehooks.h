@@ -290,7 +290,7 @@ namespace tesfilehooks
 			logger::debug("GetFileFromFormID called on {:x}", a_formID);
 			auto espIndex = a_formID >> 0x18;
 			if (espIndex == 0xFE) {
-				auto eslIndex = (a_formID >> 0x12) & 0xFFF;
+				auto eslIndex = (a_formID >> 12) & 0xFFF;
 				if (eslIndex < a_handler->compiledFileCollection.smallFiles.size()) {
 					return a_handler->compiledFileCollection.smallFiles[eslIndex];
 				}
@@ -363,8 +363,8 @@ namespace tesfilehooks
 				a_duplicate->recordFlags.reset(RE::TESFile::RecordFlag::kMaster);
 			}
 
-			a_duplicate->flags &= 0xFFFFFFu;
-			a_duplicate->flags |= a_orig->compileIndex << 24;
+			pstl::raw_flags(a_duplicate) &= 0xFFFFFFu;
+			pstl::raw_flags(a_duplicate) |= a_orig->compileIndex << 24;
 			a_duplicate->compileIndex = a_orig->compileIndex;
 			// End of VR logic copy
 			a_duplicate->smallFileCompileIndex = a_orig->smallFileCompileIndex;
@@ -391,9 +391,8 @@ namespace tesfilehooks
 	{
 		static std::uint32_t thunk(DataHandler* a_handler)
 		{
-			// This function should never be invoked since we hooked all usages, bad behavior occurred!
-			// Crash here for crashlog to show missing usage
-			throw std::invalid_argument("Unexpected invocation of LoadedModCountHook!");
+			logger::warn("Fallback invocation of LoadedModCountHook!");
+			return GetLoadedModCountSE(a_handler);
 		}
 
 		static void Install()
@@ -408,9 +407,12 @@ namespace tesfilehooks
 	{
 		static RE::TESFile* thunk(DataHandler* a_handler, std::uint32_t a_index)
 		{
-			// This hook should never be invoked, this means a usage of this function was not patched!
-			// Throw to prevent bad behavior and force a patch
-			throw std::invalid_argument("Unexpected use of DataHandler::GetModAtIndex!");
+			logger::warn("Fallback invocation of DataHandler::GetModAtIndex({:x})!", a_index);
+			PopulateFilesArray(false);
+			if (a_index < filesArray.size()) {
+				return filesArray[a_index];
+			}
+			return nullptr;
 		}
 
 		static void Install()

@@ -1,0 +1,85 @@
+# Reusable build: compiles the VR plugin and packages the .7z. Called by build.yml (PR and
+# manual CI) and release.yml (tagged release), so the toolchain is defined in one place.
+name: Build (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: "Git ref to build. Empty = the triggering commit."
+        type: string
+        default: ""
+      preset:
+        description: "CMake configure preset."
+        type: string
+        default: vs2022-windows-vcpkg-vr-package
+      artifact-name:
+        description: "Name for the uploaded package artifact."
+        type: string
+        default: skyrimvresl-package
+    outputs:
+      artifact-name:
+        description: "Artifact name the package was uploaded under."
+        value: ${{ inputs.artifact-name }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ inputs.preset }})
+    runs-on: windows-2022
+    timeout-minutes: 60
+    env:
+      VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/b/vcpkg-binary-cache,readwrite"
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          submodules: recursive
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+
+      - uses: lukka/get-cmake@591817e96fcad43505fb4eae36172462abb3a42e # v4.3.3
+
+      # The vcpkg tool is pinned independently of the manifest's builtin-baseline: the tool
+      # list in an old checkout downloads tools (7-Zip) that no longer exist upstream.
+      - name: Set up vcpkg
+        uses: lukka/run-vcpkg@b1a0dd252f06b9e25b3c022a9a03bd7a427fb6a2 # v11
+        id: runvcpkg
+        with:
+          vcpkgDirectory: "${{ github.workspace }}/b/vcpkg"
+          vcpkgGitCommitId: ee12231b20c95013c6638d845d04c91559a1d1ff
+          vcpkgJsonGlob: "vcpkg.json"
+
+      # The presets read the toolchain from VCPKG_INSTALLATION_ROOT, which on the runner
+      # image points at a different vcpkg checkout than the one set up above.
+      - name: Point presets at the pinned vcpkg
+        shell: pwsh
+        env:
+          VCPKG_ROOT_OUT: ${{ steps.runvcpkg.outputs.RUNVCPKG_VCPKG_ROOT_OUT }}
+        run: |
+          "VCPKG_INSTALLATION_ROOT=$env:VCPKG_ROOT_OUT" >> $env:GITHUB_ENV
+
+      - name: Cache vcpkg binary packages
+        uses: actions/cache@v6
+        with:
+          path: ${{ github.workspace }}/b/vcpkg-binary-cache
+          key: vcpkg-bin-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}
+          restore-keys: |
+            vcpkg-bin-${{ runner.os }}-
+
+      - name: Configure
+        env:
+          PRESET: ${{ inputs.preset }}
+        run: cmake -S . -B buildvr --preset "$env:PRESET"
+
+      - name: Build
+        run: cmake --build buildvr --config Release
+
+      - name: Upload package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: buildvr/skyrimvresl_*.7z
+          if-no-files-found: error
