@@ -1,6 +1,6 @@
 {
     "name": "skyrimvresl",
-    "version": "1.3.2",
+    "version": "1.3.3",
     "description": "SkyrimVRESL API headers for SKSE plugin developers. Provides CommonLib and legacy SKSE64 SDK variants.",
     "homepage": "https://github.com/Nightfallstorm/SkyrimVRESL",
     "license": "MIT",
