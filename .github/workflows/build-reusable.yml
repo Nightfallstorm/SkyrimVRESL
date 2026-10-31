@@ -40,21 +40,16 @@ jobs:
           ref: ${{ inputs.ref || github.sha }}
           persist-credentials: false
 
-      - name: Read vcpkg baseline
-        id: baseline
-        shell: pwsh
-        run: |
-          $baseline = (Get-Content vcpkg.json | ConvertFrom-Json).'builtin-baseline'
-          "commit=$baseline" >> $env:GITHUB_OUTPUT
-
       - uses: lukka/get-cmake@591817e96fcad43505fb4eae36172462abb3a42e # v4.3.3
 
-      - name: Set up vcpkg at the manifest baseline
+      # The vcpkg tool is pinned independently of the manifest's builtin-baseline: the tool
+      # list in an old checkout downloads tools (7-Zip) that no longer exist upstream.
+      - name: Set up vcpkg
         uses: lukka/run-vcpkg@b1a0dd252f06b9e25b3c022a9a03bd7a427fb6a2 # v11
         id: runvcpkg
         with:
           vcpkgDirectory: "${{ github.workspace }}/b/vcpkg"
-          vcpkgGitCommitId: ${{ steps.baseline.outputs.commit }}
+          vcpkgGitCommitId: ee12231b20c95013c6638d845d04c91559a1d1ff
           vcpkgJsonGlob: "vcpkg.json"
 
       # The presets read the toolchain from VCPKG_INSTALLATION_ROOT, which on the runner
