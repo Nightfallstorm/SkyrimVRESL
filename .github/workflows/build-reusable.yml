@@ -72,7 +72,7 @@ jobs:
       - name: Configure
         env:
           PRESET: ${{ inputs.preset }}
-        run: cmake -S . -B buildvr --preset "$PRESET"
+        run: cmake -S . -B buildvr --preset "$env:PRESET"
 
       - name: Build
         run: cmake --build buildvr --config Release
