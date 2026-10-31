@@ -50,6 +50,12 @@ namespace pstl
 		write_vfunc<F, 0, T>();
 	}
 
+	// TESFile::recordFlags with raw access; the top byte doubles as the compile index in the game's own code
+	inline std::uint32_t& raw_flags(RE::TESFile* a_file)
+	{
+		return reinterpret_cast<std::uint32_t&>(a_file->recordFlags);
+	}
+
 	inline std::string as_string(std::string_view a_view)
 	{
 		return { a_view.data(), a_view.size() };

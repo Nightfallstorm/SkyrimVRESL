@@ -44,10 +44,10 @@ namespace startuphooks
 		if (a_file->IsLight()) {
 			fileCollection.smallFiles.push_back(a_file);
 			auto smallFileCompileIndex = fileCollection.smallFiles.size() - 1;
-			a_file->flags &= 0xFFFFFFu;
-			a_file->flags |= 0xFE << 24;
+			pstl::raw_flags(a_file) &= 0xFFFFFFu;
+			pstl::raw_flags(a_file) |= 0xFE << 24;
 			a_file->compileIndex = 0xFE;
-			a_file->smallFileCompileIndex = smallFileCompileIndex;
+			a_file->smallFileCompileIndex = static_cast<std::uint16_t>(smallFileCompileIndex);
 			if (smallFileCompileIndex > 0xFFF) {
 				auto msg = std::format("ESL plugin {} was added beyond the ESL range! Reduce the number of ESL plugins in your load order to fix this", a_file->fileName);
 				stl::report_and_fail(msg);
@@ -55,9 +55,9 @@ namespace startuphooks
 		} else {
 			fileCollection.files.push_back(a_file);
 			auto fileCompileIndex = fileCollection.files.size() - 1;
-			a_file->flags &= 0xFFFFFFu;
-			a_file->flags |= fileCompileIndex << 24;
-			a_file->compileIndex = fileCompileIndex;
+			pstl::raw_flags(a_file) &= 0xFFFFFFu;
+			pstl::raw_flags(a_file) |= fileCompileIndex << 24;
+			a_file->compileIndex = static_cast<std::uint8_t>(fileCompileIndex);
 			a_file->smallFileCompileIndex = 0;
 			if (fileCompileIndex >= 0xFE) {
 				auto msg = std::format("Regular plugin {} was added beyond the ESP range. This will overflow with ESLs and break the game! Reduce the number of regular plugins in the load order to fix this", a_file->fileName);
@@ -212,7 +212,7 @@ namespace startuphooks
 				const auto t1 = std::chrono::high_resolution_clock::now();
 				RecordPluginOpenTiming(file,
 					static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count()));
-				*totalForms += file->unk430;
+				*totalForms += file->formCount;
 			}
 			for (auto file : handler->compiledFileCollection.smallFiles) {
 				logger::debug("OpenTESLoop opening small file! {} {:x}", std::string(file->fileName), file->compileIndex);
@@ -221,7 +221,7 @@ namespace startuphooks
 				const auto t1 = std::chrono::high_resolution_clock::now();
 				RecordPluginOpenTiming(file,
 					static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(t1 - t0).count()));
-				*totalForms += file->unk430;
+				*totalForms += file->formCount;
 			}
 			logger::debug("OpenTESLoop finished!");
 		}
