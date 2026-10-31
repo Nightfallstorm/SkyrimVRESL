@@ -60,7 +60,13 @@ namespace Papyrus
 	std::uint32_t GetNthModDependency(StaticFunctionTag*, std::uint32_t index, std::uint32_t dep_index)
 	{
 		RE::TESFile* modInfo = GetFileBySKSEIndex(index);
-		return (modInfo && dep_index < modInfo->masterCount) ? modInfo->masterPtrs[dep_index]->compileIndex : 0;
+		if (modInfo && dep_index < modInfo->masterCount) {
+			auto master = modInfo->masterPtrs[dep_index];
+			if (master) {
+				return master->IsLight() ? (master->smallFileCompileIndex + LIGHT_MOD_OFFSET) : master->compileIndex;
+			}
+		}
+		return 0;
 	}
 
 	std::uint32_t GetLightModCount(StaticFunctionTag*)
@@ -126,7 +132,13 @@ namespace Papyrus
 			return 0;
 
 		RE::TESFile* modInfo = pDataHandler->compiledFileCollection.smallFiles[index];
-		return (modInfo && dep_index < modInfo->masterCount) ? modInfo->masterPtrs[dep_index]->compileIndex : 0;
+		if (modInfo && dep_index < modInfo->masterCount) {
+			auto master = modInfo->masterPtrs[dep_index];
+			if (master) {
+				return master->IsLight() ? (master->smallFileCompileIndex + LIGHT_MOD_OFFSET) : master->compileIndex;
+			}
+		}
+		return 0;
 	}
 
 	bool IsPluginInstalled(StaticFunctionTag*, BSFixedString name)
