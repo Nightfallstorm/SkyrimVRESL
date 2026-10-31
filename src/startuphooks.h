@@ -94,38 +94,7 @@ namespace startuphooks
 			{
 				Xbyak::Label funcLabel;
 				sub(rsp, 0x20);
-				call(ptr[rip + funcLabel]);
-				add(rsp, 0x20);
-				mov(rcx, jmpAfterCall);
-				jmp(rcx);
-				L(funcLabel);
-				dq(func);
-			}
-		};
-
-		static void Install()
-		{
-			REL::Relocation<std::uintptr_t> target{ REL::Offset(0x1831F0 + 0x807) };
-			REL::Relocation<std::uintptr_t> jmp{ REL::Offset(0x1831F0 + 0x852) };
-			REL::safe_fill(target.address(), REL::NOP, jmp.address() - target.address());
-
-			auto trampolineJmp = TrampolineCall(jmp.address());
-			REL::safe_write(target.address(), trampolineJmp.getCode(), trampolineJmp.getSize());
-
-			logger::info("Install AddFile1 hook at address {:x}", target.address());
-			logger::info("Install AddFile1 hook at offset {:x}", target.offset());
-		}
-	};
-
-	struct AddTESFileHook2
-	{
-		struct TrampolineCall : Xbyak::CodeGenerator
-		{
-			// Call AddFile method, then jump back to rest of code
-			TrampolineCall(std::uintptr_t jmpAfterCall, std::uintptr_t func = stl::unrestricted_cast<std::uintptr_t>(AddFile))
-			{
-				Xbyak::Label funcLabel;
-				sub(rsp, 0x20);
+				mov(rcx, rsi);
 				call(ptr[rip + funcLabel]);
 				add(rsp, 0x20);
 				mov(rcx, jmpAfterCall);
@@ -528,7 +497,6 @@ namespace startuphooks
 	{
 		AddTESFileHook::Install();
 		AddTESFileHook1::Install();
-		AddTESFileHook2::Install();
 		CompileFilesHook::Install();
 		eslExtensionHooks::InstallHooks();
 	}
