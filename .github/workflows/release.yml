@@ -166,8 +166,7 @@ jobs:
     uses: alandtse/nexus-workflows/.github/workflows/release-nexus.yml@v1.7.0
     with:
       tag: ${{ needs.semantic-release.outputs.new_release_git_tag }}
-      # Report only until repository variable NEXUS_AUTO_UPLOAD is set to 'true'.
-      dry_run: ${{ vars.NEXUS_AUTO_UPLOAD == 'true' && 'false' || 'true' }}
+      dry_run: "false"
       changelog: ${{ needs.semantic-release.outputs.new_release_notes }}
       nexus_game_id: skyrimspecialedition
       nexus_mod_id: "106712"
