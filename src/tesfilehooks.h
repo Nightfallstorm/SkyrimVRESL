@@ -363,8 +363,8 @@ namespace tesfilehooks
 				a_duplicate->recordFlags.reset(RE::TESFile::RecordFlag::kMaster);
 			}
 
-			a_duplicate->flags &= 0xFFFFFFu;
-			a_duplicate->flags |= a_orig->compileIndex << 24;
+			pstl::raw_flags(a_duplicate) &= 0xFFFFFFu;
+			pstl::raw_flags(a_duplicate) |= a_orig->compileIndex << 24;
 			a_duplicate->compileIndex = a_orig->compileIndex;
 			// End of VR logic copy
 			a_duplicate->smallFileCompileIndex = a_orig->smallFileCompileIndex;

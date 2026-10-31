@@ -33,14 +33,14 @@ void RecordPluginLoadTiming(RE::TESFile* file, uint64_t durationNs)
 	g_timingData.push_back({
 		.filename = fnStr.c_str(),
 		.author = authStr.c_str(),
-		.version = static_cast<double>(file->unk42C),
+		.version = static_cast<double>(file->version),
 		.totalNs = durationNs,
 		.count = 1u,
 		._reserved = 0u,
 		.openNs = 0u  // filled by RecordPluginOpenTiming (OpenTES runs before ConstructObjectList)
 	});
 	logger::info("[VRESL timing] Recorded {} ns for '{}' (author='{}' ver={:.3f}) [{} total]",
-		durationNs, fn, authStr, static_cast<double>(file->unk42C),
+		durationNs, fn, authStr, static_cast<double>(file->version),
 		g_timingData.size());
 }
 
@@ -62,7 +62,7 @@ void RecordPluginOpenTiming(RE::TESFile* file, uint64_t openNs)
 		(file->createdBy.empty()) ? "" : file->createdBy.c_str());
 	g_timingData.push_back({ .filename = fnStr.c_str(),
 		.author = authStr.c_str(),
-		.version = static_cast<double>(file->unk42C),
+		.version = static_cast<double>(file->version),
 		.totalNs = 0u,
 		.count = 0u,
 		._reserved = 0u,

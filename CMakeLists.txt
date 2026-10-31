@@ -109,8 +109,13 @@ set(Boost_USE_STATIC_LIBS ON)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "")
 
 # ---- Dependencies ----
+set(ENABLE_SKYRIM_SE OFF CACHE BOOL "" FORCE)
+set(ENABLE_SKYRIM_AE OFF CACHE BOOL "" FORCE)
+set(ENABLE_SKYRIM_VR ON CACHE BOOL "" FORCE)
+set(SKSE_SUPPORT_XBYAK ON CACHE BOOL "" FORCE)
+set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
 if(DEFINED CommonLibPath AND NOT ${CommonLibPath} STREQUAL "" AND IS_DIRECTORY ${CommonLibPath})
-	add_subdirectory(${CommonLibPath} ${CommonLibName})
+	add_subdirectory(${CommonLibPath} CommonLibSSE)
 else()
 	message(
 		FATAL_ERROR
@@ -175,7 +180,7 @@ target_include_directories(
 target_link_libraries(
 	${PROJECT_NAME}
 	PRIVATE
-	${CommonLibName}::${CommonLibName}
+	CommonLibSSE::CommonLibSSE
 	${Detours_LIBRARIES}
 	robin_hood::robin_hood
 )

@@ -119,7 +119,7 @@ namespace SKSEVRHooks
 					saveSuccessful &= intfc->WriteRecordData(&file->smallFileCompileIndex, sizeof(file->smallFileCompileIndex));
 				}
 
-				std::uint16_t nameLen = strlen(file->fileName);
+				auto nameLen = static_cast<std::uint16_t>(strlen(file->fileName));
 				saveSuccessful &= intfc->WriteRecordData(&nameLen, sizeof(nameLen));
 				saveSuccessful &= intfc->WriteRecordData(file->fileName, nameLen);
 				if (file->compileIndex != 0xFE) {

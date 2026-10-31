@@ -13,7 +13,7 @@ Adds ESL support to SkyrimVR.
   - Add the environment variable `VCPKG_ROOT` with the value as the path to the folder containing vcpkg
 - [Visual Studio Community 2022](https://visualstudio.microsoft.com/)
   - Desktop development with C++
-- [CommonLibVR](https://github.com/alandtse/CommonLibVR/tree/vr)
+- [CommonLibVR](https://github.com/alandtse/CommonLibVR/tree/ng) (CommonLibSSE-NG, VR runtime)
   - Add this as as an environment variable `CommonLibVRPath`
 
 ## User Requirements
@@ -64,7 +64,7 @@ Use of the API headers ([SkyrimVRESLAPI.h](src/SkyrimVRESLAPI.h), [SkyrimVRESLAP
 
 Skyrim modding is built on the community. While there are too many to count, we couldn't have done this without foundational work since the original Skyrim release.
 
-- Contributors to [CommonLib (check fork network and all the credits)](https://github.com/alandtse/CommonLibVR/tree/vr), including the original author, [Ryan](https://github.com/Ryan-rsm-McKenzie).
+- Contributors to [CommonLib (check fork network and all the credits)](https://github.com/alandtse/CommonLibVR/tree/ng), including the original author, [Ryan](https://github.com/Ryan-rsm-McKenzie).
 - [SKSE Team](https://skse.silverlock.org/)
 - [Powerof3](https://github.com/powerof3)
 
