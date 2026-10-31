@@ -1,0 +1,178 @@
+# Release pipeline. Every push to main, after a short debounce, runs semantic-release: it reads
+# the Conventional Commit history, picks the next version, bumps CMakeLists.txt and the vcpkg
+# manifests, commits that back to main with [skip ci], tags vX.Y.Z and publishes a GitHub
+# Release. The same run then builds the tagged commit, attaches the .7z, refreshes the vcpkg
+# port, syncs dev, and uploads to Nexus.
+#
+# One workflow on purpose: later jobs read semantic-release's outputs directly, so nothing
+# depends on the tag push re-triggering another workflow, and GITHUB_TOKEN is enough.
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  debounce:
+    name: Debounce merges
+    runs-on: ubuntu-latest
+    # Skip semantic-release's own [skip ci] bump commit, but only for pushes so a manual
+    # dispatch right after a bump is never blocked.
+    if: >-
+      github.repository == 'Nightfallstorm/SkyrimVRESL' &&
+      (github.event_name != 'push' ||
+       !contains(github.event.head_commit.message, '[skip ci]'))
+    concurrency:
+      group: semantic-release-debounce
+      cancel-in-progress: true
+    steps:
+      - name: Wait for the merge burst to settle
+        if: github.event_name == 'push'
+        run: sleep 300 # a newer merge cancels and restarts this wait
+
+  semantic-release:
+    name: Semantic Release
+    needs: debounce
+    runs-on: ubuntu-latest
+    # A live bump commit, tag and Release is never aborted by a newer push.
+    concurrency:
+      group: semantic-release-publish
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    outputs:
+      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
+      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
+      new_release_git_tag: ${{ steps.semantic.outputs.new_release_git_tag }}
+      new_release_notes: ${{ steps.semantic.outputs.new_release_notes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v6
+        with:
+          semantic_version: 24.2.6
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/git
+            @semantic-release/github
+            @google/semantic-release-replace-plugin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: Build release package
+    needs: semantic-release
+    if: needs.semantic-release.outputs.new_release_published == 'true'
+    uses: ./.github/workflows/build-reusable.yml
+    with:
+      # Build the exact tagged commit so the compiled-in version matches the tag.
+      ref: ${{ needs.semantic-release.outputs.new_release_git_tag }}
+
+  publish:
+    name: Attach package to release
+    needs: [semantic-release, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download package
+        uses: actions/download-artifact@v7
+        with:
+          name: ${{ needs.build.outputs.artifact-name }}
+          path: dist
+
+      - name: Upload to the GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.semantic-release.outputs.new_release_git_tag }}
+        run: gh release upload "$TAG" dist/*.7z --clobber --repo "$GITHUB_REPOSITORY"
+
+  portfile:
+    name: Update vcpkg port and sync dev
+    needs: [semantic-release, publish]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: portfile-sync
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Update portfile
+        env:
+          TAG: ${{ needs.semantic-release.outputs.new_release_git_tag }}
+        run: bash cmake/ports/update-portfile.sh "$TAG"
+
+      - name: Commit portfile
+        env:
+          TAG: ${{ needs.semantic-release.outputs.new_release_git_tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add cmake/ports/SkyrimVRESL/portfile.cmake
+          if git diff --staged --quiet; then
+            echo "Portfile already up to date."
+          else
+            git commit -m "chore: update portfile for ${TAG} [skip ci]"
+            git push origin HEAD:main
+          fi
+
+      # main only adds release commits on top of dev. Fast-forward dev to it; if dev has moved
+      # on since, open a sync PR instead of overwriting it.
+      - name: Sync dev with main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git push origin HEAD:dev; then
+            exit 0
+          fi
+          git push origin HEAD:refs/heads/sync/main-to-dev
+          gh pr create --base dev --head sync/main-to-dev \
+            --title "chore: sync main into dev" \
+            --body "dev moved while releasing; merge main back so the release commits are on dev." \
+            || echo "A sync PR is already open."
+
+  nexus:
+    name: Nexus upload
+    needs: [semantic-release, publish]
+    if: needs.semantic-release.outputs.new_release_published == 'true'
+    # The uploader reads the mod's file list then writes, which is not safe to run twice at once.
+    concurrency:
+      group: nexus-upload-${{ github.repository }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    uses: alandtse/nexus-workflows/.github/workflows/release-nexus.yml@v1.7.0
+    with:
+      tag: ${{ needs.semantic-release.outputs.new_release_git_tag }}
+      # Report only until repository variable NEXUS_AUTO_UPLOAD is set to 'true'.
+      dry_run: ${{ vars.NEXUS_AUTO_UPLOAD == 'true' && 'false' || 'true' }}
+      changelog: ${{ needs.semantic-release.outputs.new_release_notes }}
+      nexus_game_id: skyrimspecialedition
+      nexus_mod_id: "106712"
+      mod_filename: SkyrimVRESL
+      file_description: Adds ESL support to SkyrimVR.
+    secrets:
+      UNEX_NEXUSMODS_SESSION_COOKIE: ${{ secrets.UNEX_NEXUSMODS_SESSION_COOKIE }}
+      UNEX_APIKEY: ${{ secrets.UNEX_APIKEY }}
