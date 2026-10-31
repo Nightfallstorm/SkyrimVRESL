@@ -28,7 +28,7 @@ permissions:
 jobs:
   build:
     name: Build (${{ inputs.preset }})
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 60
     env:
       VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/b/vcpkg-binary-cache,readwrite"
